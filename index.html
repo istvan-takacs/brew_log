@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brew Log</title>
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+    <h1>☕ Brew Log</h1>
+    <div class="contents">
+        <div class="log">
+            <h2>Log Brew</h2>
+            <form id="brew-log" action="" method="get">
+                <div class="weight">
+                    <label for="weight">Weight (g)</label>
+                    <input type="number" id="weight" name="weight" step="0.1" min="18.5" max="19.5" lang="en" placeholder="19" required autofocus>
+                </div>
+                <div class="time">
+                    <label for="time">Time (s)</label>
+                    <input type="number" id="time" name="time" step="1" min="24" max="30" placeholder="27" required>
+                </div>
+                <div class="grind">
+                    <label for="grind">Grinder time (s)</label>
+                    <input type="number" id="grind" name="grind" step="0.05" min="6" max="15" placeholder="8" required>
+                </div>
+                <div class="log-btn">
+                    <button type="submit">Log Brew</button>
+                </div>
+            </form>
+        </div>
+        <div class="history">
+            <h2>Brew History</h2>
+            
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="today">Today</button>
+                <button class="filter-tab" data-filter="week">This Week</button>
+                <button class="filter-tab" data-filter="all">All Time</button>
+            </div>
+            
+            <!-- Stats Summary -->
+            <div class="stats-summary" id="stats-summary">
+                <div class="stat-item">
+                    <span class="stat-label">Total Brews</span>
+                    <span class="stat-value" id="stat-total">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Showing</span>
+                    <span class="stat-value" id="stat-showing">0</span>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="brew-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Shift</th>
+                            <th>Weight (g)</th>
+                            <th>Time (s)</th>
+                            <th>Grind (s)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="brew-table-body">
+                        <!-- Brews will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Brew logged! ☕</div>
+
+    <!-- Firebase SDK (using CDN) -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
