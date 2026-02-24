@@ -59,6 +59,8 @@ const locationTabs = document.querySelectorAll('.location-tab');
 const logSection = document.querySelector('.log');
 const contentsDiv = document.querySelector('.contents');
 const tableHeaderRow = document.getElementById('table-header-row');
+const toggleFormBtn = document.getElementById('toggle-form');
+const formContent = document.getElementById('form-content');
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -75,8 +77,22 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFilterTabs();
     setupBeanSelector();
     setupLocationTabs();
+    setupFormToggle();
     updateTimeInputLimits(); // Set initial limits for House
 });
+
+/**
+ * Setup form collapse/expand toggle (mobile only)
+ */
+function setupFormToggle() {
+    if (toggleFormBtn) {
+        toggleFormBtn.addEventListener('click', () => {
+            formContent.classList.toggle('collapsed');
+            const icon = toggleFormBtn.querySelector('.toggle-icon');
+            icon.textContent = formContent.classList.contains('collapsed') ? '+' : '−';
+        });
+    }
+}
 
 /**
  * Setup bean type selector
@@ -399,25 +415,42 @@ function renderTable(brews) {
         shiftBrews.forEach(brew => {
             const row = document.createElement('tr');
             
-            // Build row HTML with conditional location column
-            let rowHTML = `
-                <td>${formatTimestamp(brew.timestamp)}</td>
-                <td><span class="shift-badge shift-${brew.shift}">${brew.shift}</span></td>
-                <td><span class="bean-badge bean-${brew.beanType}">${brew.beanType}</span></td>
-            `;
-            
-            // Add location column if in global view
+            // Add class for mobile card layout with location
             if (isGlobalView) {
-                rowHTML += `<td><span class="location-badge location-${brew.location}">${brew.location}</span></td>`;
+                row.classList.add('has-location');
             }
             
-            rowHTML += `
-                <td>${brew.extractionWeight}</td>
-                <td>${brew.extractionTime}</td>
-                <td>${brew.grindTime}</td>
-            `;
+            // Timestamp cell (left side)
+            const timeCell = document.createElement('td');
+            timeCell.className = 'brew-time';
+            timeCell.textContent = formatTimestamp(brew.timestamp);
+            row.appendChild(timeCell);
             
-            row.innerHTML = rowHTML;
+            // Content cell (right side) - wraps badges and details
+            const contentCell = document.createElement('td');
+            contentCell.className = 'brew-content';
+            
+            // Badges container
+            const badgesDiv = document.createElement('div');
+            badgesDiv.className = 'brew-badges';
+            badgesDiv.innerHTML = `
+                <span class="shift-badge shift-${brew.shift}">${brew.shift}</span>
+                <span class="bean-badge bean-${brew.beanType}">${brew.beanType}</span>
+                ${isGlobalView ? `<span class="location-badge location-${brew.location}">${brew.location}</span>` : ''}
+            `;
+            contentCell.appendChild(badgesDiv);
+            
+            // Details container
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = 'brew-details';
+            detailsDiv.innerHTML = `
+                <span>${brew.extractionWeight}g</span>
+                <span>${brew.extractionTime}s</span>
+                <span>${brew.grindTime}s</span>
+            `;
+            contentCell.appendChild(detailsDiv);
+            
+            row.appendChild(contentCell);
             tableBody.appendChild(row);
         });
     });

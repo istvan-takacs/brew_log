@@ -18,6 +18,10 @@
     --shadow: rgba(62, 39, 35, 0.08);
     --shadow-hover: rgba(62, 39, 35, 0.12);
     
+    /* Mobile-specific */
+    --mobile-touch-target: 48px;
+    --mobile-input-height: 56px;
+    
     /* Shift Colors */
     --shift-am: #FF9800;
     --shift-pm: #9C27B0;
@@ -35,6 +39,9 @@
     --radius-lg: 12px;
     
     font-family: 'Lexend', sans-serif;
+    
+    /* Prevent iOS text size adjustment */
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -137,6 +144,49 @@ h2 {
     height: fit-content;
     position: sticky;
     top: var(--gap-lg);
+}
+
+/* Log Header with Toggle */
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--gap-lg);
+}
+
+.log-header h2 {
+    margin-bottom: 0;
+}
+
+.toggle-form-btn {
+    display: none; /* Hidden on desktop */
+    width: 40px;
+    height: 40px;
+    background-color: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    padding: 0;
+    font-family: 'Lexend', sans-serif;
+}
+
+.toggle-form-btn:hover {
+    border-color: var(--accent-primary);
+    background-color: var(--bg-secondary);
+}
+
+.form-content {
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.form-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
 }
 
 /* Bean Type Selector (Segmented Control) */
@@ -558,55 +608,311 @@ tbody tr:hover {
 /* Mobile Responsiveness */
 @media (max-width: 767px) {
     body {
-        padding: var(--gap-md);
+        padding: 0;
+        padding-bottom: calc(var(--mobile-touch-target) + env(safe-area-inset-bottom, 0px)); /* Space for bottom tabs */
     }
     
-    h1 {
-        font-size: 2rem;
+    /* Header - Compact */
+    header {
+        padding: var(--gap-md) var(--gap-md) 0;
         margin-bottom: var(--gap-md);
     }
     
+    h1 {
+        font-size: 1.75rem;
+        margin-bottom: var(--gap-md);
+    }
+    
+    /* BOTTOM STICKY LOCATION TABS */
     .location-tabs {
-        justify-content: flex-start;
-        padding: 0;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--bg-secondary);
+        border-top: 2px solid var(--border-color);
+        box-shadow: 0 -2px 8px var(--shadow);
+        padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+        z-index: 100;
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 4px;
+        justify-content: stretch;
     }
     
     .location-tab {
-        padding: 0.625rem 1rem;
-        font-size: 0.8rem;
+        padding: 0;
+        height: var(--mobile-touch-target);
+        min-width: 0;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border-radius: var(--radius-sm);
+        white-space: normal;
+        word-break: break-word;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        letter-spacing: 0;
+    }
+    
+    /* Show abbreviations on mobile */
+    .location-tab::before {
+        content: attr(data-short);
+    }
+    
+    /* Hide full text on mobile */
+    .location-tab {
+        font-size: 0; /* Hide original text */
+    }
+    
+    .location-tab::before {
+        font-size: 0.75rem; /* Show abbreviation */
+    }
+    
+    /* Content Area */
+    .contents {
+        padding: 0 var(--gap-md);
     }
     
     .log {
         position: static;
+        margin-bottom: var(--gap-lg);
     }
     
+    /* Show toggle button on mobile */
+    .toggle-form-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Larger Touch Targets */
+    .bean-btn {
+        height: var(--mobile-input-height);
+        font-size: 0.9rem;
+    }
+    
+    input[type="number"] {
+        height: var(--mobile-input-height);
+        font-size: 16px; /* Prevents iOS zoom */
+        padding: 1rem;
+    }
+    
+    button[type="submit"] {
+        height: var(--mobile-input-height);
+        font-size: 1rem;
+    }
+    
+    label {
+        font-size: 0.8rem;
+    }
+    
+    /* Filter Tabs */
     .filter-tabs {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        margin-bottom: var(--gap-md);
     }
     
+    .filter-tab {
+        padding: 0.625rem 1rem;
+        font-size: 0.8rem;
+    }
+    
+    /* Stats Summary - Single Row on Mobile */
     .stats-summary {
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--gap-sm);
+        padding: var(--gap-md);
+        margin-bottom: var(--gap-md);
+        text-align: center;
     }
     
+    .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .stat-label {
+        font-size: 0.7rem;
+        white-space: nowrap;
+    }
+    
+    .stat-value {
+        font-size: 1.125rem;
+        font-weight: 700;
+    }
+    
+    /* Celebration */
     .celebration {
         font-size: 5rem;
     }
     
+    /* CARD-BASED BREW HISTORY (Mobile Only) */
+    .history {
+        margin-bottom: var(--gap-lg);
+    }
+    
     .table-container {
-        max-height: 400px;
+        max-height: none; /* Remove height limit on mobile */
     }
     
+    /* Convert table to block layout for cards */
     table {
-        font-size: 0.8rem;
+        display: block;
+        border-collapse: collapse;
     }
     
-    th, td {
-        padding: 0.75rem 0.5rem;
+    /* Hide table header on mobile */
+    thead {
+        display: none;
     }
     
-    .shift-badge {
+    #brew-table-body {
+        display: block;
+    }
+    
+    /* Shift Group Header - Card Style */
+    .shift-group-header {
+        display: block;
+        position: static;
+        background-color: var(--bg-primary);
+        padding: var(--gap-sm) var(--gap-md);
+        margin-bottom: var(--gap-sm);
+        border-radius: var(--radius-md);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+    
+    .shift-group-header td {
+        display: block;
+        padding: 0;
+        border: none;
+    }
+    
+    /* Brew Cards - Two Column Layout: Time Left, Content Right (Centered) */
+    tbody tr:not(.shift-group-header) {
+        display: flex;
+        gap: var(--gap-md);
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: var(--gap-md);
+        margin-bottom: var(--gap-sm);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        align-items: center;
+    }
+    
+    tbody tr:not(.shift-group-header):active {
+        background-color: var(--bg-primary);
+    }
+    
+    tbody tr td {
+        border: none;
+        padding: 0;
+    }
+    
+    /* LEFT SIDE: Timestamp */
+    tbody tr td:nth-child(1) {
+        flex: 0 0 auto;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+    }
+    
+    /* RIGHT SIDE: Content wrapper */
+    /* Create a flex container for badges and details */
+    tbody tr td:nth-child(2) {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        align-items: center;
+        text-align: center;
+    }
+    
+    /* All other cells position relatively within the flex container */
+    tbody tr td:nth-child(n+3) {
+        position: absolute;
+        pointer-events: none;
+    }
+    
+    /* TOP ROW: Badges - Position within the second cell */
+    tbody tr td:nth-child(2)::after {
+        content: '';
+        display: block;
+    }
+    
+    tbody tr td:nth-child(3) {
+        position: static;
+        display: inline-block;
+        margin-right: var(--gap-sm);
+    }
+    
+    /* Location badge (global view) */
+    tbody tr.has-location td:nth-child(4) {
+        position: static;
+        display: inline-block;
+        margin-right: var(--gap-sm);
+    }
+    
+    /* BOTTOM ROW: Details */
+    tbody tr td:nth-child(4),
+    tbody tr td:nth-child(5),
+    tbody tr td:nth-child(6) {
+        position: static;
+        display: inline-block;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-right: 0.5rem;
+    }
+    
+    /* Global view details */
+    tbody tr.has-location td:nth-child(5),
+    tbody tr.has-location td:nth-child(6),
+    tbody tr.has-location td:nth-child(7) {
+        position: static;
+        display: inline-block;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-right: 0.5rem;
+    }
+    
+    /* Badges container */
+    .brew-badges {
+        display: flex;
+        gap: var(--gap-sm);
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    /* Details container */
+    .brew-details {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+    
+    /* Badges */
+    .shift-badge,
+    .bean-badge,
+    .location-badge {
         font-size: 0.7rem;
         padding: 0.2rem 0.6rem;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        display: block;
+        padding: var(--gap-xl);
     }
 }

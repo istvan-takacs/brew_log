@@ -12,19 +12,25 @@
         
         <!-- Location Tabs -->
         <nav class="location-tabs">
-            <button class="location-tab" data-location="all">All Locations</button>
-            <button class="location-tab active" data-location="Shoreditch">Shoreditch</button>
-            <button class="location-tab" data-location="Tower">Tower</button>
-            <button class="location-tab" data-location="Bankside">Bankside</button>
-            <button class="location-tab" data-location="Victoria">Victoria</button>
-            <button class="location-tab" data-location="Olympia">Olympia</button>
+            <button class="location-tab" data-location="all" data-short="All">All Locations</button>
+            <button class="location-tab active" data-location="Shoreditch" data-short="LSD">Shoreditch</button>
+            <button class="location-tab" data-location="Tower" data-short="LTL">Tower</button>
+            <button class="location-tab" data-location="Bankside" data-short="LBS">Bankside</button>
+            <button class="location-tab" data-location="Victoria" data-short="LVS">Victoria</button>
+            <button class="location-tab" data-location="Olympia" data-short="LOL">Olympia</button>
         </nav>
     </header>
     
     <div class="contents">
         <div class="log">
-            <h2>Log Brew</h2>
+            <div class="log-header">
+                <h2>Log Brew</h2>
+                <button type="button" id="toggle-form" class="toggle-form-btn" aria-label="Toggle form">
+                    <span class="toggle-icon">−</span>
+                </button>
+            </div>
             
+            <div id="form-content" class="form-content">
             <!-- Bean Type Selector -->
             <div class="bean-selector">
                 <button type="button" class="bean-btn active" data-bean="House">House</button>
@@ -34,20 +40,21 @@
             <form id="brew-log" action="" method="get">
                 <div class="weight">
                     <label for="weight">Weight (g)</label>
-                    <input type="number" id="weight" name="weight" step="0.1" min="18.5" max="19.5" lang="en" placeholder="19" required autofocus>
+                    <input type="number" inputmode="numeric" id="weight" name="weight" step="0.1" min="18.5" max="19.5" lang="en" placeholder="19" required autofocus>
                 </div>
                 <div class="time">
                     <label for="time">Time (s)</label>
-                    <input type="number" id="time" name="time" step="1" min="24" max="30" placeholder="27" required>
+                    <input type="number" inputmode="numeric" id="time" name="time" step="1" min="24" max="30" placeholder="27" required>
                 </div>
                 <div class="grind">
                     <label for="grind">Grinder time (s)</label>
-                    <input type="number" id="grind" name="grind" step="0.05" min="6" max="15" placeholder="8" required>
+                    <input type="number"  inputmode="numeric" id="grind" name="grind" step="0.05" min="6" max="15" placeholder="8" required>
                 </div>
                 <div class="log-btn">
                     <button type="submit">Log Brew</button>
                 </div>
             </form>
+            </div><!-- /form-content -->
         </div>
         <div class="history">
             <h2>Brew History</h2>
