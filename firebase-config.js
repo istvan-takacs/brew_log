@@ -1,5 +1,4 @@
 // Firebase Configuration
-// Replace this with YOUR config from Firebase Console
 
 const firebaseConfig = {
   apiKey: "AIzaSyD9qmcDMS14sGDEroEdJ3T14uzzUvN1_wU",

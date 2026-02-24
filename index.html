@@ -7,10 +7,30 @@
     <link href="style.css" rel="stylesheet">
 </head>
 <body>
-    <h1>☕ Brew Log</h1>
+    <header>
+        <h1>Brew Log ☕📊 </h1>
+        
+        <!-- Location Tabs -->
+        <nav class="location-tabs">
+            <button class="location-tab" data-location="all">All Locations</button>
+            <button class="location-tab active" data-location="Shoreditch">Shoreditch</button>
+            <button class="location-tab" data-location="Tower">Tower</button>
+            <button class="location-tab" data-location="Bankside">Bankside</button>
+            <button class="location-tab" data-location="Victoria">Victoria</button>
+            <button class="location-tab" data-location="Olympia">Olympia</button>
+        </nav>
+    </header>
+    
     <div class="contents">
         <div class="log">
             <h2>Log Brew</h2>
+            
+            <!-- Bean Type Selector -->
+            <div class="bean-selector">
+                <button type="button" class="bean-btn active" data-bean="House">House</button>
+                <button type="button" class="bean-btn" data-bean="Decaf">Decaf</button>
+            </div>
+            
             <form id="brew-log" action="" method="get">
                 <div class="weight">
                     <label for="weight">Weight (g)</label>
@@ -49,14 +69,19 @@
                     <span class="stat-label">Showing</span>
                     <span class="stat-value" id="stat-showing">0</span>
                 </div>
+                <div class="stat-item">
+                    <span class="stat-label">Current Streak</span>
+                    <span class="stat-value" id="stat-streak">🔥 0</span>
+                </div>
             </div>
             
             <div class="table-container">
                 <table id="brew-table">
                     <thead>
-                        <tr>
+                        <tr id="table-header-row">
                             <th>Timestamp</th>
                             <th>Shift</th>
+                            <th>Bean</th>
                             <th>Weight (g)</th>
                             <th>Time (s)</th>
                             <th>Grind (s)</th>
@@ -72,6 +97,9 @@
 
     <!-- Toast Notification -->
     <div id="toast" class="toast">Brew logged! ☕</div>
+    
+    <!-- Celebration Animation -->
+    <div id="celebration" class="celebration hidden">🔥</div>
 
     <!-- Firebase SDK (using CDN) -->
     <script type="module" src="script.js"></script>
