@@ -423,12 +423,13 @@ tbody tr td {
 .brew-badges .shift-badge,
 .brew-badges .bean-badge,
 .brew-badges .location-badge {
-    display: table-cell !important;
+    display: table-cell;
     vertical-align: middle;
-    padding: 0.75rem 1rem !important;
-    font-size: 0.75rem !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase ;
 }
 
 /* Desktop: Shift cell colors */
@@ -503,9 +504,9 @@ tbody tr td {
 /* Shift Badge */
 .shift-badge {
     display: inline-block;
-    padding: 0.2rem 0.5rem !important;
-    border-radius: 16px !important;
-    font-size: 0.7rem !important;
+    padding: 0.2rem 0.5rem ;
+    border-radius: 16px ;
+    font-size: 0.7rem ;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -530,9 +531,9 @@ tbody tr td {
 /* Bean Type Badge */
 .bean-badge {
     display: inline-block;
-    padding: 0.2rem 0.5rem !important;
-    border-radius: 16px !important;
-    font-size: 0.7rem !important;
+    padding: 0.2rem 0.5rem ;
+    border-radius: 16px ;
+    font-size: 0.7rem ;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
