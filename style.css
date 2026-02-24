@@ -51,6 +51,11 @@ body {
     padding: var(--gap-lg);
 }
 
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
 /* Header */
 header {
     max-width: 1400px;
@@ -395,6 +400,95 @@ tbody tr:hover {
     background-color: var(--bg-primary);
 }
 
+/* DESKTOP: Display as traditional table */
+tbody tr {
+    display: table-row;
+}
+
+tbody tr td {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+/* Desktop: Content wrapper - children become table cells */
+.brew-content {
+    display: contents;
+}
+
+.brew-badges {
+    display: contents;
+}
+
+/* Desktop: Badges as colored table cells (no pill shape) */
+.brew-badges .shift-badge,
+.brew-badges .bean-badge,
+.brew-badges .location-badge {
+    display: table-cell !important;
+    vertical-align: middle;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+}
+
+/* Desktop: Shift cell colors */
+.brew-badges .shift-AM {
+    background-color: rgba(255, 152, 0, 0.15);
+    color: var(--shift-am);
+}
+
+.brew-badges .shift-PM {
+    background-color: rgba(156, 39, 176, 0.15);
+    color: var(--shift-pm);
+}
+
+.brew-badges .shift-Night {
+    background-color: rgba(63, 81, 181, 0.15);
+    color: var(--shift-night);
+}
+
+/* Desktop: Bean cell colors */
+.brew-badges .bean-House {
+    background-color: rgba(141, 110, 99, 0.15);
+    color: var(--accent-primary);
+}
+
+.brew-badges .bean-Decaf {
+    background-color: rgba(76, 175, 80, 0.15);
+    color: #388E3C;
+}
+
+.brew-details {
+    display: contents;
+}
+
+.brew-details span {
+    display: table-cell;
+    vertical-align: middle;
+    padding: 0.75rem 1rem; /* Reduced vertical padding */
+}
+
+/* Desktop: Location marker as table cell with badge styling */
+.location-marker {
+    writing-mode: horizontal-tb;
+    text-orientation: mixed;
+    font-size: 0.75rem;
+    padding: 1rem;
+    border-radius: 0;
+    color: var(--text-primary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: table-cell;
+    vertical-align: middle;
+}
+
+/* Desktop: Timestamp cell */
+.brew-time {
+    display: table-cell;
+    vertical-align: middle;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -409,12 +503,13 @@ tbody tr:hover {
 /* Shift Badge */
 .shift-badge {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem !important;
+    border-radius: 16px !important;
+    font-size: 0.7rem !important;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    box-sizing: border-box;
 }
 
 .shift-AM {
@@ -435,12 +530,13 @@ tbody tr:hover {
 /* Bean Type Badge */
 .bean-badge {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem !important;
+    border-radius: 16px !important;
+    font-size: 0.7rem !important;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    box-sizing: border-box;
 }
 
 .bean-House {
@@ -456,12 +552,13 @@ tbody tr:hover {
 /* Location Badge (Global View Only) */
 .location-badge {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem !important;
+    border-radius: 16px !important;
+    font-size: 0.7rem !important;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    box-sizing: border-box;
 }
 
 .location-Shoreditch {
@@ -552,6 +649,36 @@ tbody tr:hover {
     opacity: 0.3;
 }
 
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+}
+
+.empty-state .hint {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+/* Smooth Transitions (Global) */
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+/* Enhanced Focus States */
+*:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+button:focus-visible,
+input:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
 /* Success Toast */
 .toast {
     position: fixed;
@@ -573,6 +700,61 @@ tbody tr:hover {
 .toast.show {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* Error Toast */
+.toast.error {
+    background-color: #D32F2F;
+    color: white;
+}
+
+/* Offline Banner */
+.offline-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #FF9800;
+    color: white;
+    padding: 0.75rem;
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    z-index: 9999;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+.offline-banner:not(.hidden) {
+    transform: translateY(0);
+}
+
+/* Pull-to-Refresh Indicator */
+.refresh-indicator {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100%);
+    background-color: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px var(--shadow-hover);
+    z-index: 9998;
+    transition: transform 0.3s ease;
+}
+
+.refresh-indicator:not(.hidden) {
+    transform: translateX(-50%) translateY(0);
+}
+
+.refresh-spinner {
+    font-size: 1.5rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* Celebration Animation */
@@ -603,6 +785,155 @@ tbody tr:hover {
     50% {
         transform: translate(-50%, -50%) scale(1.2);
     }
+}
+
+/* Confirmation Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.modal:not(.hidden) {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background-color: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--gap-xl);
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.modal:not(.hidden) .modal-content {
+    transform: scale(1);
+}
+
+.modal-content h3 {
+    margin-bottom: var(--gap-md);
+    color: var(--text-primary);
+    font-size: 1.25rem;
+}
+
+.modal-content p {
+    margin-bottom: var(--gap-lg);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.modal-actions {
+    display: flex;
+    gap: var(--gap-md);
+    justify-content: flex-end;
+}
+
+.btn-secondary,
+.btn-primary {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    font-family: 'Lexend', sans-serif;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.btn-secondary {
+    background-color: var(--bg-primary);
+    color: var(--text-secondary);
+    border: 2px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-primary {
+    background-color: var(--accent-primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--text-primary);
+    transform: translateY(-1px);
+}
+
+/* Loading Skeleton */
+.loading-skeleton {
+    padding: var(--gap-md);
+}
+
+.skeleton-card {
+    height: 80px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--gap-sm);
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Form Validation Hints */
+.input-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: #D32F2F;
+    margin-top: 0.25rem;
+}
+
+input:invalid:not(:placeholder-shown) {
+    border-color: #D32F2F;
+    background-color: rgba(211, 47, 47, 0.05);
+}
+
+input:invalid:not(:placeholder-shown) + .input-hint {
+    display: block;
+}
+
+input:valid:not(:placeholder-shown) {
+    border-color: #4CAF50;
+}
+
+/* Button Loading State */
+.btn-spinner {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
 }
 
 /* Mobile Responsiveness */
@@ -763,7 +1094,7 @@ tbody tr:hover {
     
     /* Convert table to block layout for cards */
     table {
-        display: block;
+        display: block !important;
         border-collapse: collapse;
     }
     
@@ -795,10 +1126,24 @@ tbody tr:hover {
         border: none;
     }
     
-    /* Brew Cards - Two Column Layout: Time Left, Content Right (Centered) */
-    tbody tr:not(.shift-group-header) {
-        display: flex;
+    /* Brew Cards - Location-specific: Two columns */
+    tbody tr:not(.shift-group-header):not(.has-location) {
+        display: flex !important;
         gap: var(--gap-md);
+        background-color: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: var(--gap-md);
+        margin-bottom: var(--gap-sm);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        align-items: center;
+    }
+    
+    /* Brew Cards - Global view: Three columns (marker + time + content) */
+    tbody tr.has-location {
+        display: grid !important;
+        grid-template-columns: 24px auto 1fr;
+        gap: 0 var(--gap-sm);
         background-color: var(--bg-secondary);
         border: 1px solid var(--border-color);
         border-radius: var(--radius-md);
@@ -817,98 +1162,112 @@ tbody tr:hover {
         padding: 0;
     }
     
-    /* LEFT SIDE: Timestamp */
-    tbody tr td:nth-child(1) {
-        flex: 0 0 auto;
-        font-size: 1.5rem;
+    /* LOCATION MARKER (Global view only) - Override desktop styles */
+    .location-marker {
+        grid-column: 1;
+        grid-row: 1;
+        writing-mode: vertical-rl !important;
+        text-orientation: upright !important;
+        font-size: 0.65rem !important;
+        font-weight: 700;
+        letter-spacing: 1px;
+        border-radius: var(--radius-sm);
+        color: white;
+        width: 24px !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem 0 !important;
+    }
+    
+    /* Location marker colors - Muted café palette */
+    .location-marker[data-location="Shoreditch"] {
+        background-color: #7986CB;
+        color: #FFFFFF;
+    }
+    
+    .location-marker[data-location="Tower"] {
+        background-color: #C19A6B;
+        color: #FFFFFF;
+    }
+    
+    .location-marker[data-location="Bankside"] {
+        background-color: #81C784;
+        color: #FFFFFF;
+    }
+    
+    .location-marker[data-location="Victoria"] {
+        background-color: #FFB74D;
+        color: #FFFFFF;
+    }
+    
+    .location-marker[data-location="Olympia"] {
+        background-color: #BA68C8;
+        color: #FFFFFF;
+    }
+    
+    /* TIMESTAMP (location-specific cards) - Override desktop */
+    tbody tr:not(.has-location) .brew-time {
+        flex: 0 0 auto !important;
+        font-size: 1.5rem !important;
         font-weight: 700;
         color: var(--text-primary);
         line-height: 1.2;
     }
     
-    /* RIGHT SIDE: Content wrapper */
-    /* Create a flex container for badges and details */
-    tbody tr td:nth-child(2) {
+    /* TIMESTAMP (global view cards with marker) - Override desktop */
+    tbody tr.has-location .brew-time {
+        grid-column: 2;
+        grid-row: 1;
+        flex: 0 0 auto !important;
+        font-size: 1.5rem !important;
+        font-weight: 700;
+        color: var(--text-primary);
+        line-height: 1.2;
+        align-self: center;
+    }
+    
+    /* CONTENT WRAPPER - Override desktop for mobile cards */
+    tbody tr:not(.has-location) .brew-content {
         flex: 1;
-        display: flex;
+        display: flex !important;
         flex-direction: column;
         gap: 0.25rem;
         align-items: center;
         text-align: center;
     }
     
-    /* All other cells position relatively within the flex container */
-    tbody tr td:nth-child(n+3) {
-        position: absolute;
-        pointer-events: none;
+    tbody tr.has-location .brew-content {
+        grid-column: 3;
+        grid-row: 1;
+        display: flex !important;
+        flex-direction: column;
+        gap: 0.25rem;
+        align-items: center;
+        text-align: center;
     }
     
-    /* TOP ROW: Badges - Position within the second cell */
-    tbody tr td:nth-child(2)::after {
-        content: '';
-        display: block;
-    }
-    
-    tbody tr td:nth-child(3) {
-        position: static;
-        display: inline-block;
-        margin-right: var(--gap-sm);
-    }
-    
-    /* Location badge (global view) */
-    tbody tr.has-location td:nth-child(4) {
-        position: static;
-        display: inline-block;
-        margin-right: var(--gap-sm);
-    }
-    
-    /* BOTTOM ROW: Details */
-    tbody tr td:nth-child(4),
-    tbody tr td:nth-child(5),
-    tbody tr td:nth-child(6) {
-        position: static;
-        display: inline-block;
-        font-size: 0.875rem;
-        color: var(--text-secondary);
-        margin-right: 0.5rem;
-    }
-    
-    /* Global view details */
-    tbody tr.has-location td:nth-child(5),
-    tbody tr.has-location td:nth-child(6),
-    tbody tr.has-location td:nth-child(7) {
-        position: static;
-        display: inline-block;
-        font-size: 0.875rem;
-        color: var(--text-secondary);
-        margin-right: 0.5rem;
-    }
-    
-    /* Badges container */
+    /* Badges container - shift more to center */
     .brew-badges {
-        display: flex;
+        display: flex !important;
         gap: var(--gap-sm);
         flex-wrap: wrap;
         justify-content: center;
+        margin-left: 1.5rem;
     }
     
     /* Details container */
     .brew-details {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
+        display: flex !important;
+        gap: 1rem;
+        flex-wrap: nowrap;
         justify-content: center;
         font-size: 0.875rem;
         color: var(--text-secondary);
+        white-space: nowrap;
     }
     
-    /* Badges */
-    .shift-badge,
-    .bean-badge,
-    .location-badge {
-        font-size: 0.7rem;
-        padding: 0.2rem 0.6rem;
-    }
+    /* Badges - mobile keeps rounded pill shape from base styles */
     
     /* Empty State */
     .empty-state {

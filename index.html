@@ -41,17 +41,23 @@
                 <div class="weight">
                     <label for="weight">Weight (g)</label>
                     <input type="number" inputmode="numeric" id="weight" name="weight" step="0.1" min="18.5" max="19.5" lang="en" placeholder="19" required autofocus>
+                    <span class="input-hint hidden" id="weight-hint">Must be between 18.5-19.5g</span>
                 </div>
                 <div class="time">
                     <label for="time">Time (s)</label>
                     <input type="number" inputmode="numeric" id="time" name="time" step="1" min="24" max="30" placeholder="27" required>
+                    <span class="input-hint hidden" id="time-hint">Must be between 24-30s</span>
                 </div>
                 <div class="grind">
                     <label for="grind">Grinder time (s)</label>
                     <input type="number"  inputmode="numeric" id="grind" name="grind" step="0.05" min="6" max="15" placeholder="8" required>
+                    <span class="input-hint hidden" id="grind-hint">Must be between 6-15s</span>
                 </div>
                 <div class="log-btn">
-                    <button type="submit">Log Brew</button>
+                    <button type="submit" id="submit-btn">
+                        <span class="btn-text">Log Brew</span>
+                        <span class="btn-spinner hidden">⏳</span>
+                    </button>
                 </div>
             </form>
             </div><!-- /form-content -->
@@ -83,6 +89,15 @@
             </div>
             
             <div class="table-container">
+                <!-- Loading Skeleton -->
+                <div id="loading-skeleton" class="loading-skeleton hidden">
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
+                
                 <table id="brew-table">
                     <thead>
                         <tr id="table-header-row">
@@ -104,9 +119,33 @@
 
     <!-- Toast Notification -->
     <div id="toast" class="toast">Brew logged! ☕</div>
+    <div id="error-toast" class="toast error"></div>
+    
+    <!-- Offline Banner -->
+    <div id="offline-banner" class="offline-banner hidden">
+        📡 You're offline - brews won't be saved
+    </div>
+    
+    <!-- Pull-to-Refresh Indicator -->
+    <div id="refresh-indicator" class="refresh-indicator hidden">
+        <div class="refresh-spinner">↻</div>
+    </div>
     
     <!-- Celebration Animation -->
     <div id="celebration" class="celebration hidden">🔥</div>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <h3>⚠️ Brew Already Logged</h3>
+            <p id="modal-message"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" id="modal-cancel">Cancel</button>
+                <button type="button" class="btn-primary" id="modal-confirm">Replace</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Firebase SDK (using CDN) -->
     <script type="module" src="script.js"></script>

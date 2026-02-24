@@ -61,9 +61,41 @@ const contentsDiv = document.querySelector('.contents');
 const tableHeaderRow = document.getElementById('table-header-row');
 const toggleFormBtn = document.getElementById('toggle-form');
 const formContent = document.getElementById('form-content');
+const errorToast = document.getElementById('error-toast');
+const offlineBanner = document.getElementById('offline-banner');
+const refreshIndicator = document.getElementById('refresh-indicator');
+const loadingSkeleton = document.getElementById('loading-skeleton');
+const brewTable = document.getElementById('brew-table');
+const confirmModal = document.getElementById('confirm-modal');
+const modalMessage = document.getElementById('modal-message');
+const modalCancel = document.getElementById('modal-cancel');
+const modalConfirm = document.getElementById('modal-confirm');
+const submitBtn = document.getElementById('submit-btn');
+const btnText = submitBtn.querySelector('.btn-text');
+const btnSpinner = submitBtn.querySelector('.btn-spinner');
+const weightInput = document.getElementById('weight');
+const timeInputEl = document.getElementById('time');
+const grindInput = document.getElementById('grind');
+const weightHint = document.getElementById('weight-hint');
+const timeHint = document.getElementById('time-hint');
+const grindHint = document.getElementById('grind-hint');
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 App initializing...');
+    
+    // Ensure skeleton is hidden on load
+    loadingSkeleton.classList.add('hidden');
+    brewTable.style.display = '';
+    
+    // Ensure refresh indicator is hidden
+    refreshIndicator.classList.add('hidden');
+    
+    // Ensure offline banner is hidden initially
+    if (navigator.onLine) {
+        offlineBanner.classList.add('hidden');
+    }
+    
     // Restore last selected location from localStorage
     const savedLocation = localStorage.getItem('selectedLocation');
     if (savedLocation && savedLocation !== 'all') {
@@ -72,6 +104,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     updateLocationTabs();
+    
+    // Setup network status monitoring
+    setupNetworkMonitoring();
+    
+    // Setup pull-to-refresh
+    setupPullToRefresh();
+    
+    // Setup modal
+    setupModal();
+    
+    // Setup form validation
+    setupFormValidation();
+    
     loadAndRenderBrews();
     form.addEventListener('submit', handleSubmit);
     setupFilterTabs();
@@ -92,6 +137,202 @@ function setupFormToggle() {
             icon.textContent = formContent.classList.contains('collapsed') ? '+' : '−';
         });
     }
+}
+
+/**
+ * Show loading skeleton
+ */
+function showLoading() {
+    console.log('🔄 Showing loading skeleton');
+    loadingSkeleton.classList.remove('hidden');
+    brewTable.style.display = 'none';
+}
+
+/**
+ * Hide loading skeleton
+ */
+function hideLoading() {
+    console.log('✅ Hiding loading skeleton');
+    loadingSkeleton.classList.add('hidden');
+    brewTable.style.display = ''; // Reset to default (table)
+}
+
+/**
+ * Show error toast
+ */
+function showError(message) {
+    errorToast.textContent = message;
+    errorToast.classList.add('show');
+    setTimeout(() => {
+        errorToast.classList.remove('show');
+    }, 5000);
+}
+
+/**
+ * Setup network status monitoring
+ */
+function setupNetworkMonitoring() {
+    window.addEventListener('online', () => {
+        offlineBanner.classList.add('hidden');
+        showToast('Back online! ✅');
+    });
+    
+    window.addEventListener('offline', () => {
+        offlineBanner.classList.remove('hidden');
+    });
+    
+    // Check initial state
+    if (!navigator.onLine) {
+        offlineBanner.classList.remove('hidden');
+    }
+}
+
+/**
+ * Setup pull-to-refresh
+ */
+let pullStartY = 0;
+let isPulling = false;
+
+function setupPullToRefresh() {
+    let pullDistance = 0;
+    
+    document.addEventListener('touchstart', (e) => {
+        if (window.scrollY === 0) {
+            pullStartY = e.touches[0].pageY;
+            isPulling = true;
+        }
+    });
+    
+    document.addEventListener('touchmove', (e) => {
+        if (!isPulling) return;
+        
+        const currentY = e.touches[0].pageY;
+        pullDistance = currentY - pullStartY;
+        
+        if (pullDistance > 80) {
+            refreshIndicator.classList.remove('hidden');
+        }
+    });
+    
+    document.addEventListener('touchend', async () => {
+        if (isPulling && pullDistance > 80) {
+            refreshIndicator.classList.remove('hidden');
+            try {
+                await loadAndRenderBrews();
+                showToast('Refreshed! ✅');
+                triggerHaptic();
+            } catch (error) {
+                showError('Failed to refresh');
+            } finally {
+                setTimeout(() => {
+                    refreshIndicator.classList.add('hidden');
+                }, 500);
+            }
+        }
+        isPulling = false;
+        pullDistance = 0;
+    });
+}
+
+/**
+ * Trigger haptic feedback (iOS)
+ */
+function triggerHaptic() {
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+}
+
+/**
+ * Setup confirmation modal
+ */
+let modalResolve = null;
+
+function setupModal() {
+    modalCancel.addEventListener('click', () => {
+        closeModal();
+        if (modalResolve) modalResolve(false);
+    });
+    
+    modalConfirm.addEventListener('click', () => {
+        closeModal();
+        if (modalResolve) modalResolve(true);
+    });
+    
+    // Close on overlay click
+    confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal || e.target.classList.contains('modal-overlay')) {
+            closeModal();
+            if (modalResolve) modalResolve(false);
+        }
+    });
+}
+
+function showModal(message) {
+    return new Promise((resolve) => {
+        modalMessage.innerHTML = message;
+        confirmModal.classList.remove('hidden');
+        modalResolve = resolve;
+    });
+}
+
+function closeModal() {
+    confirmModal.classList.add('hidden');
+    modalResolve = null;
+}
+
+/**
+ * Setup form validation
+ */
+function setupFormValidation() {
+    // Weight validation
+    weightInput.addEventListener('blur', () => {
+        if (weightInput.value && (parseFloat(weightInput.value) < 18.5 || parseFloat(weightInput.value) > 19.5)) {
+            weightHint.classList.remove('hidden');
+        } else {
+            weightHint.classList.add('hidden');
+        }
+    });
+    
+    weightInput.addEventListener('input', () => {
+        if (weightInput.value && parseFloat(weightInput.value) >= 18.5 && parseFloat(weightInput.value) <= 19.5) {
+            weightHint.classList.add('hidden');
+        }
+    });
+    
+    // Time validation
+    timeInputEl.addEventListener('blur', () => {
+        const min = parseInt(timeInputEl.min);
+        const max = parseInt(timeInputEl.max);
+        if (timeInputEl.value && (parseInt(timeInputEl.value) < min || parseInt(timeInputEl.value) > max)) {
+            timeHint.classList.remove('hidden');
+        } else {
+            timeHint.classList.add('hidden');
+        }
+    });
+    
+    timeInputEl.addEventListener('input', () => {
+        const min = parseInt(timeInputEl.min);
+        const max = parseInt(timeInputEl.max);
+        if (timeInputEl.value && parseInt(timeInputEl.value) >= min && parseInt(timeInputEl.value) <= max) {
+            timeHint.classList.add('hidden');
+        }
+    });
+    
+    // Grind validation
+    grindInput.addEventListener('blur', () => {
+        if (grindInput.value && (parseFloat(grindInput.value) < 6 || parseFloat(grindInput.value) > 15)) {
+            grindHint.classList.remove('hidden');
+        } else {
+            grindHint.classList.add('hidden');
+        }
+    });
+    
+    grindInput.addEventListener('input', () => {
+        if (grindInput.value && parseFloat(grindInput.value) >= 6 && parseFloat(grindInput.value) <= 15) {
+            grindHint.classList.add('hidden');
+        }
+    });
 }
 
 /**
@@ -243,6 +484,7 @@ async function updateBrew(brewId, brewData) {
  * Load brews from Firestore (filtered by location if not in global view)
  */
 async function loadBrews() {
+    showLoading();
     try {
         let q;
         
@@ -281,9 +523,12 @@ async function loadBrews() {
         });
         
         console.log(`📊 Loaded ${brews.length} brews from Firestore`);
+        hideLoading();
         return brews;
     } catch (error) {
         console.error('❌ Error loading brews:', error);
+        hideLoading();
+        showError('Failed to load brews. Check your connection.');
         return [];
     }
 }
@@ -384,7 +629,7 @@ function renderTable(brews) {
         tableBody.innerHTML = `
             <tr>
                 <td colspan="${colspan}" class="empty-state">
-                    <p>No brews logged yet. Start logging to see your history!</p>
+                    <p>No brews logged yet.</p>
                 </td>
             </tr>
         `;
@@ -418,6 +663,26 @@ function renderTable(brews) {
             // Add class for mobile card layout with location
             if (isGlobalView) {
                 row.classList.add('has-location');
+                row.setAttribute('data-location', brew.location);
+            }
+            
+            // Location marker cell (mobile global view only)
+            if (isGlobalView) {
+                const markerCell = document.createElement('td');
+                markerCell.className = 'location-marker';
+                markerCell.setAttribute('data-location', brew.location);
+                
+                // Get abbreviation from location name
+                const abbr = {
+                    'Shoreditch': 'LSD',
+                    'Tower': 'LTL',
+                    'Bankside': 'LBS',
+                    'Victoria': 'LVS',
+                    'Olympia': 'LOL'
+                }[brew.location] || brew.location.substring(0, 3).toUpperCase();
+                
+                markerCell.textContent = abbr;
+                row.appendChild(markerCell);
             }
             
             // Timestamp cell (left side)
@@ -430,13 +695,12 @@ function renderTable(brews) {
             const contentCell = document.createElement('td');
             contentCell.className = 'brew-content';
             
-            // Badges container
+            // Badges container (no location badge - that's in the marker now)
             const badgesDiv = document.createElement('div');
             badgesDiv.className = 'brew-badges';
             badgesDiv.innerHTML = `
                 <span class="shift-badge shift-${brew.shift}">${brew.shift}</span>
                 <span class="bean-badge bean-${brew.beanType}">${brew.beanType}</span>
-                ${isGlobalView ? `<span class="location-badge location-${brew.location}">${brew.location}</span>` : ''}
             `;
             contentCell.appendChild(badgesDiv);
             
@@ -596,6 +860,12 @@ function setupFilterTabs() {
 async function handleSubmit(e) {
     e.preventDefault();
     
+    // Show loading state
+    submitBtn.disabled = true;
+    btnText.classList.add('hidden');
+    btnSpinner.classList.remove('hidden');
+
+
     // Get form values
     const weight = parseFloat(document.getElementById('weight').value);
     const time = parseFloat(document.getElementById('time').value);
@@ -609,8 +879,8 @@ async function handleSubmit(e) {
     const existingBrew = await checkDuplicateBrew(selectedBeanType, shiftId);
     
     if (existingBrew) {
-        const overwrite = confirm(
-            `${selectedBeanType} brew already logged for ${calculateShift(now)} shift.\n\nOverwrite existing entry?`
+        const confirmOverwrite = await showModal(
+            `You've already logged a <strong>${beanType}</strong> brew for the <strong>${shift} shift</strong>.`
         );
         
         if (!overwrite) {
@@ -649,6 +919,13 @@ async function handleSubmit(e) {
     
     // Focus back on first input
     document.getElementById('weight').focus();
+
+    // Hide loading state  
+    submitBtn.disabled = false;
+    btnText.classList.remove('hidden');
+    btnSpinner.classList.add('hidden');
+
+    triggerHaptic(); // Add haptic feedback
     
     // Show success toast with streak info
     if (shiftCompleted && newStreak > 0) {
