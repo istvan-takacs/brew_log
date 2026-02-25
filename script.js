@@ -321,7 +321,7 @@ function setupFormValidation() {
     
     // Grind validation
     grindInput.addEventListener('blur', () => {
-        if (grindInput.value && (parseFloat(grindInput.value) < 6 || parseFloat(grindInput.value) > 15)) {
+        if (grindInput.value && (parseFloat(grindInput.value) < 3 || parseFloat(grindInput.value) > 15)) {
             grindHint.classList.remove('hidden');
         } else {
             grindHint.classList.add('hidden');
@@ -329,7 +329,7 @@ function setupFormValidation() {
     });
     
     grindInput.addEventListener('input', () => {
-        if (grindInput.value && parseFloat(grindInput.value) >= 6 && parseFloat(grindInput.value) <= 15) {
+        if (grindInput.value && parseFloat(grindInput.value) >= 3 && parseFloat(grindInput.value) <= 15) {
             grindHint.classList.add('hidden');
         }
     });
