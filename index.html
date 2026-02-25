@@ -40,17 +40,17 @@
             <form id="brew-log" action="" method="get">
                 <div class="weight">
                     <label for="weight">Weight (g)</label>
-                    <input type="number" inputmode="numeric" id="weight" name="weight" step="0.1" min="18.5" max="19.5" lang="en" placeholder="19" required autofocus>
+                    <input type="number" inputmode="decimal" id="weight" name="weight" step="0.1" min="18.5" max="19.5" lang="en" placeholder="19" required autofocus>
                     <span class="input-hint hidden" id="weight-hint">Must be between 18.5-19.5g</span>
                 </div>
                 <div class="time">
                     <label for="time">Time (s)</label>
-                    <input type="number" inputmode="numeric" id="time" name="time" step="1" min="24" max="30" placeholder="27" required>
+                    <input type="number" inputmode="decimal" id="time" name="time" step="1" min="24" max="30" placeholder="27" required>
                     <span class="input-hint hidden" id="time-hint">Must be between 24-30s</span>
                 </div>
                 <div class="grind">
                     <label for="grind">Grinder time (s)</label>
-                    <input type="number"  inputmode="numeric" id="grind" name="grind" step="0.05" min="6" max="15" placeholder="8" required>
+                    <input type="number" inputmode="decimal" id="grind" name="grind" step="0.05" min="6" max="15" placeholder="8" required>
                     <span class="input-hint hidden" id="grind-hint">Must be between 6-15s</span>
                 </div>
                 <div class="log-btn">
