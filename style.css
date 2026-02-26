@@ -376,7 +376,7 @@ thead {
 
 th {
     padding: 1rem;
-    text-align: left;
+    text-align: center; /* Center header text */
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -389,6 +389,12 @@ td {
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
     color: var(--text-primary);
+}
+
+/* Desktop: Center all table body content */
+tbody td {
+    text-align: center;
+    vertical-align: middle;
 }
 
 tbody tr {
@@ -415,48 +421,22 @@ tbody tr td {
     display: contents;
 }
 
+/* Desktop: brew-badges wrapper disappears, badges become separate table cells */
 .brew-badges {
     display: contents;
 }
 
-/* Desktop: Badges as colored table cells (no pill shape) */
-.brew-badges .shift-badge,
-.brew-badges .bean-badge,
-.brew-badges .location-badge {
-    display: table-cell;
-    vertical-align: middle;
-    text-align: center;
-    padding: 0.75rem 1rem;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase ;
-}
-
-/* Desktop: Shift cell colors */
-.brew-badges .shift-AM {
-    background-color: rgba(255, 152, 0, 0.15);
-    color: var(--shift-am);
-}
-
-.brew-badges .shift-PM {
-    background-color: rgba(156, 39, 176, 0.15);
-    color: var(--shift-pm);
-}
-
-.brew-badges .shift-Night {
-    background-color: rgba(63, 81, 181, 0.15);
-    color: var(--shift-night);
-}
-
-/* Desktop: Bean cell colors */
-.brew-badges .bean-House {
-    background-color: rgba(141, 110, 99, 0.15);
-    color: var(--accent-primary);
-}
-
-.brew-badges .bean-Decaf {
-    background-color: rgba(76, 175, 80, 0.15);
-    color: #388E3C;
+/* Desktop: Each badge is its own table cell with VERY compact styling */
+tbody .brew-badges .shift-badge,
+tbody .brew-badges .bean-badge,
+tbody .brew-badges .location-badge {
+    display: table-cell !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    padding: 0.3rem 0.5rem !important; /* Small compact padding */
+    font-size: 0.65rem !important; /* Small text */
+    border-radius: 12px !important; /* Smaller radius */
+    font-weight: 600 !important;
 }
 
 .brew-details {
@@ -469,25 +449,32 @@ tbody tr td {
     padding: 0.75rem 1rem; /* Reduced vertical padding */
 }
 
-/* Desktop: Location marker as table cell with badge styling */
-.location-marker {
-    writing-mode: horizontal-tb;
-    text-orientation: mixed;
-    font-size: 0.75rem;
-    padding: 1rem;
-    border-radius: 0;
-    color: var(--text-primary);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+/* Desktop: Location cell (4th column in global view) */
+.brew-location-desktop {
     display: table-cell;
     vertical-align: middle;
+    padding: 0.75rem 1rem;
+    text-align: center;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+/* Desktop: Hide mobile vertical location marker */
+.location-marker {
+    display: none;
 }
 
 /* Desktop: Timestamp cell */
 .brew-time {
     display: table-cell;
     vertical-align: middle;
+    text-align: center;
+}
+
+/* Desktop: Ensure all detail spans are centered */
+.brew-details span {
+    text-align: center;
 }
 
 @keyframes fadeIn {
@@ -503,10 +490,10 @@ tbody tr td {
 
 /* Shift Badge */
 .shift-badge {
-    display: inline-block;
-    padding: 0.2rem 0.5rem ;
-    border-radius: 16px ;
-    font-size: 0.7rem ;
+    display: inline-block !important;
+    padding: 0.2rem 0.5rem !important;
+    border-radius: 16px !important;
+    font-size: 0.7rem !important;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -603,6 +590,7 @@ tbody tr td {
 .shift-group-header td {
     padding: 0.75rem 1rem;
     border-bottom: 2px solid var(--border-color);
+    text-align: left; /* Left-align shift group headers */
 }
 
 /* Stats Summary */
@@ -1163,8 +1151,9 @@ button[type="submit"]:disabled {
         padding: 0;
     }
     
-    /* LOCATION MARKER (Global view only) - Override desktop styles */
+    /* LOCATION MARKER (Global view only) - Show and style on mobile */
     .location-marker {
+        display: flex !important;
         grid-column: 1;
         grid-row: 1;
         writing-mode: vertical-rl !important;
@@ -1268,7 +1257,25 @@ button[type="submit"]:disabled {
         white-space: nowrap;
     }
     
-    /* Badges - mobile keeps rounded pill shape from base styles */
+    /* Mobile: Hide desktop location cell */
+    .brew-location-desktop {
+        display: none !important;
+    }
+    
+    /* Mobile: Override desktop and restore ORIGINAL larger pills */
+    .brew-badges {
+        display: flex !important;
+    }
+    
+    .brew-badges .shift-badge,
+    .brew-badges .bean-badge,
+    .brew-badges .location-badge {
+        display: inline-block !important;
+        padding: 0.25rem 0.75rem !important; /* ORIGINAL larger size */
+        font-size: 0.75rem !important; /* ORIGINAL larger text */
+        border-radius: 20px !important; /* ORIGINAL larger radius */
+        margin: 0;
+    }
     
     /* Empty State */
     .empty-state {

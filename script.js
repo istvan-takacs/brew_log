@@ -666,36 +666,37 @@ function renderTable(brews) {
                 row.setAttribute('data-location', brew.location);
             }
             
-            // Location marker cell (mobile global view only)
-            if (isGlobalView) {
-                const markerCell = document.createElement('td');
-                markerCell.className = 'location-marker';
-                markerCell.setAttribute('data-location', brew.location);
-                
-                // Get abbreviation from location name
-                const abbr = {
+            // Get abbreviation from location name (for global view)
+            const abbr = isGlobalView ? (
+                {
                     'Shoreditch': 'LSD',
                     'Tower': 'LTL',
                     'Bankside': 'LBS',
                     'Victoria': 'LVS',
                     'Olympia': 'LOL'
-                }[brew.location] || brew.location.substring(0, 3).toUpperCase();
-                
+                }[brew.location] || brew.location.substring(0, 3).toUpperCase()
+            ) : null;
+            
+            // MOBILE: Location marker cell FIRST (for mobile 3-column grid)
+            if (isGlobalView) {
+                const markerCell = document.createElement('td');
+                markerCell.className = 'location-marker';
+                markerCell.setAttribute('data-location', brew.location);
                 markerCell.textContent = abbr;
                 row.appendChild(markerCell);
             }
             
-            // Timestamp cell (left side)
+            // 1. Timestamp cell
             const timeCell = document.createElement('td');
             timeCell.className = 'brew-time';
             timeCell.textContent = formatTimestamp(brew.timestamp);
             row.appendChild(timeCell);
             
-            // Content cell (right side) - wraps badges and details
+            // Content cell - wraps badges and details
             const contentCell = document.createElement('td');
             contentCell.className = 'brew-content';
             
-            // Badges container (no location badge - that's in the marker now)
+            // 2-3. Badges container (shift + bean)
             const badgesDiv = document.createElement('div');
             badgesDiv.className = 'brew-badges';
             badgesDiv.innerHTML = `
@@ -704,7 +705,15 @@ function renderTable(brews) {
             `;
             contentCell.appendChild(badgesDiv);
             
-            // Details container
+            // 4. Location (desktop only - as a table cell in the middle)
+            if (isGlobalView) {
+                const locationCell = document.createElement('div');
+                locationCell.className = 'brew-location-desktop';
+                locationCell.textContent = abbr; // Reuse abbreviation
+                contentCell.appendChild(locationCell);
+            }
+            
+            // 5-6-7. Details container (weight, time, grind)
             const detailsDiv = document.createElement('div');
             detailsDiv.className = 'brew-details';
             detailsDiv.innerHTML = `
