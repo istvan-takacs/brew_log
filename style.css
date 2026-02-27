@@ -251,7 +251,8 @@ label {
     letter-spacing: 0.5px;
 }
 
-input[type="number"] {
+input[type="number"],
+input[type="text"][inputmode="decimal"] {
     padding: 0.875rem 1rem;
     font-size: 1.125rem;
     font-family: 'Lexend', sans-serif;
@@ -262,13 +263,15 @@ input[type="number"] {
     transition: all 0.2s ease;
 }
 
-input[type="number"]:focus {
+input[type="number"]:focus,
+input[type="text"][inputmode="decimal"]:focus {
     outline: none;
     border-color: var(--accent-primary);
     box-shadow: 0 0 0 3px rgba(141, 110, 99, 0.1);
 }
 
-input[type="number"]::placeholder {
+input[type="number"]::placeholder,
+input[type="text"][inputmode="decimal"]::placeholder {
     color: #BDBDBD;
 }
 
@@ -446,7 +449,7 @@ tbody .brew-badges .location-badge {
 .brew-details span {
     display: table-cell;
     vertical-align: middle;
-    padding: 0.75rem 1rem; /* Reduced vertical padding */
+    padding: 0.75rem 1rem; /* Reduced vertical  padding */
 }
 
 /* Desktop: Location cell (4th column in global view) */
@@ -900,16 +903,19 @@ input:focus-visible {
     margin-top: 0.25rem;
 }
 
-input:invalid:not(:placeholder-shown) {
+input[type="number"]:invalid:not(:placeholder-shown),
+input[type="text"][inputmode="decimal"]:invalid:not(:placeholder-shown) {
     border-color: #D32F2F;
     background-color: rgba(211, 47, 47, 0.05);
 }
 
-input:invalid:not(:placeholder-shown) + .input-hint {
+input[type="number"]:invalid:not(:placeholder-shown) + .input-hint,
+input[type="text"][inputmode="decimal"]:invalid:not(:placeholder-shown) + .input-hint {
     display: block;
 }
 
-input:valid:not(:placeholder-shown) {
+input[type="number"]:valid:not(:placeholder-shown),
+input[type="text"][inputmode="decimal"]:valid:not(:placeholder-shown) {
     border-color: #4CAF50;
 }
 
@@ -1013,7 +1019,8 @@ button[type="submit"]:disabled {
         font-size: 0.9rem;
     }
     
-    input[type="number"] {
+    input[type="number"],
+    input[type="text"][inputmode="decimal"] {
         height: var(--mobile-input-height);
         font-size: 16px; /* Prevents iOS zoom */
         padding: 1rem;

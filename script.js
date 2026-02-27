@@ -975,11 +975,33 @@ function showToast(message = 'Brew logged! ☕') {
 }
 
 // Keyboard shortcut: Press Enter to submit from any input
-document.querySelectorAll('input[type="number"]').forEach(input => {
+document.querySelectorAll('input[type="number"], input[type="text"][inputmode="decimal"]').forEach(input => {
     input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             form.requestSubmit();
         }
+    });
+});
+
+// Fix iOS decimal separator issue (comma vs dot)
+// Some iOS keyboards show comma instead of dot based on locale
+document.querySelectorAll('input[type="number"], input[type="text"][inputmode="decimal"]').forEach(input => {
+    input.addEventListener('input', (e) => {
+        // Replace comma with dot for decimal separator
+        const value = e.target.value;
+        if (value.includes(',')) {
+            e.target.value = value.replace(',', '.');
+        }
+    });
+    
+    // Also handle paste events
+    input.addEventListener('paste', (e) => {
+        setTimeout(() => {
+            const value = e.target.value;
+            if (value.includes(',')) {
+                e.target.value = value.replace(/,/g, '.');
+            }
+        }, 0);
     });
 });
