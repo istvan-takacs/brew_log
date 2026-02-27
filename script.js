@@ -581,12 +581,36 @@ function groupBrewsByShift(brews) {
 function calculateStreak(allBrews) {
     console.log(`📊 Calculating streak from ${allBrews.length} brews`);
     
+    if (allBrews.length === 0) {
+        console.log('❌ No brews logged - streak = 0');
+        return 0;
+    }
+    
     const groups = groupBrewsByShift(allBrews);
     
-    // Sort shift IDs in reverse chronological order
-    const sortedShiftIds = Object.keys(groups).sort().reverse();
+    // Sort shift IDs by actual timestamp (most recent first)
+    const sortedShiftIds = Object.keys(groups).sort((a, b) => {
+        // Get the latest timestamp from each shift
+        const latestA = Math.max(...groups[a].map(brew => new Date(brew.timestamp).getTime()));
+        const latestB = Math.max(...groups[b].map(brew => new Date(brew.timestamp).getTime()));
+        return latestB - latestA; // Descending order (most recent first)
+    });
     
     console.log(`📅 Found ${sortedShiftIds.length} shifts:`, sortedShiftIds.slice(0, 5)); // Show first 5
+    
+    // Get the current shift ID based on current time
+    const currentShiftId = getShiftIdentifier(new Date());
+    const mostRecentLoggedShiftId = sortedShiftIds[0];
+    
+    console.log(`🕐 Current shift: ${currentShiftId}`);
+    console.log(`📝 Most recent logged shift: ${mostRecentLoggedShiftId}`);
+    
+    // If the most recent logged shift is NOT the current shift, streak = 0
+    // (This means a shift has passed since the last brew was logged)
+    if (currentShiftId !== mostRecentLoggedShiftId) {
+        console.log('❌ Current shift has no brews - streak broken');
+        return 0;
+    }
     
     let streak = 0;
     
@@ -671,7 +695,14 @@ function renderTable(brews) {
     
     // Group brews by shift
     const groups = groupBrewsByShift(brews);
-    const sortedShiftIds = Object.keys(groups).sort().reverse();
+    
+    // Sort shifts by the timestamp of their latest brew (most recent shift first)
+    const sortedShiftIds = Object.keys(groups).sort((a, b) => {
+        // Get the latest timestamp from each shift
+        const latestA = Math.max(...groups[a].map(brew => new Date(brew.timestamp).getTime()));
+        const latestB = Math.max(...groups[b].map(brew => new Date(brew.timestamp).getTime()));
+        return latestB - latestA; // Descending order (most recent first)
+    });
     
     // Render each group
     sortedShiftIds.forEach(shiftId => {
@@ -683,11 +714,12 @@ function renderTable(brews) {
         `;
         tableBody.appendChild(headerRow);
         
-        // Add brews in this shift (sort by bean type: House first, then Decaf)
+        // Add brews in this shift (sort by timestamp DESC - newest first)
         const shiftBrews = groups[shiftId].sort((a, b) => {
-            if (a.beanType === 'House' && b.beanType === 'Decaf') return -1;
-            if (a.beanType === 'Decaf' && b.beanType === 'House') return 1;
-            return 0;
+            // Sort by timestamp descending (newest first)
+            const timeA = new Date(a.timestamp).getTime();
+            const timeB = new Date(b.timestamp).getTime();
+            return timeB - timeA; // Descending order
         });
         
         shiftBrews.forEach(brew => {
