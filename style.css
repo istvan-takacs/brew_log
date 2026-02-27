@@ -787,7 +787,7 @@ input:focus-visible {
     right: 0;
     bottom: 0;
     z-index: 10000;
-    display: flex;
+    display: none; /* Hidden by default */
     align-items: center;
     justify-content: center;
     opacity: 0;
@@ -796,6 +796,7 @@ input:focus-visible {
 }
 
 .modal:not(.hidden) {
+    display: flex; /* Show when not hidden */
     opacity: 1;
     pointer-events: all;
 }

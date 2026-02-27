@@ -249,36 +249,60 @@ function triggerHaptic() {
 let modalResolve = null;
 
 function setupModal() {
+    if (!confirmModal || !modalCancel || !modalConfirm || !modalMessage) {
+        console.error('❌ Modal elements not found!');
+        return;
+    }
+    
+    console.log('✅ Modal setup complete');
+    
     modalCancel.addEventListener('click', () => {
+        console.log('❌ Cancel button clicked');
+        if (modalResolve) {
+            modalResolve(false);
+            modalResolve = null;
+        }
         closeModal();
-        if (modalResolve) modalResolve(false);
     });
     
     modalConfirm.addEventListener('click', () => {
+        console.log('✅ Confirm button clicked');
+        if (modalResolve) {
+            modalResolve(true);
+            modalResolve = null;
+        }
         closeModal();
-        if (modalResolve) modalResolve(true);
     });
     
     // Close on overlay click
     confirmModal.addEventListener('click', (e) => {
         if (e.target === confirmModal || e.target.classList.contains('modal-overlay')) {
+            console.log('❌ Overlay clicked');
+            if (modalResolve) {
+                modalResolve(false);
+                modalResolve = null;
+            }
             closeModal();
-            if (modalResolve) modalResolve(false);
         }
     });
 }
 
 function showModal(message) {
     return new Promise((resolve) => {
+        console.log('🔔 Showing modal:', message);
         modalMessage.innerHTML = message;
         confirmModal.classList.remove('hidden');
+        // Force display in case CSS isn't working
+        confirmModal.style.display = 'flex';
         modalResolve = resolve;
     });
 }
 
 function closeModal() {
+    console.log('❌ Closing modal');
     confirmModal.classList.add('hidden');
-    modalResolve = null;
+    confirmModal.style.display = 'none';
+    // Don't set modalResolve to null here - it's already handled in the button handlers
 }
 
 /**
@@ -555,10 +579,14 @@ function groupBrewsByShift(brews) {
  * A complete shift = both House AND Decaf logged
  */
 function calculateStreak(allBrews) {
+    console.log(`📊 Calculating streak from ${allBrews.length} brews`);
+    
     const groups = groupBrewsByShift(allBrews);
     
     // Sort shift IDs in reverse chronological order
     const sortedShiftIds = Object.keys(groups).sort().reverse();
+    
+    console.log(`📅 Found ${sortedShiftIds.length} shifts:`, sortedShiftIds.slice(0, 5)); // Show first 5
     
     let streak = 0;
     
@@ -567,15 +595,20 @@ function calculateStreak(allBrews) {
         const hasHouse = brews.some(b => b.beanType === 'House');
         const hasDecaf = brews.some(b => b.beanType === 'Decaf');
         
+        console.log(`  ${shiftId}: House=${hasHouse}, Decaf=${hasDecaf}`);
+        
         // Both beans logged = complete shift
         if (hasHouse && hasDecaf) {
             streak++;
+            console.log(`    ✅ Complete shift! Streak: ${streak}`);
         } else {
             // Streak broken - stop counting
+            console.log(`    ❌ Incomplete shift - streak ends at ${streak}`);
             break;
         }
     }
     
+    console.log(`🔥 Final streak: ${streak}`);
     return streak;
 }
 
@@ -766,8 +799,10 @@ function updateStats(totalBrews, filteredBrews, streak) {
     // Only show streak in location-specific view
     if (isGlobalView) {
         statStreak.textContent = '—';
+        console.log('📊 Stats: Global view - streak hidden');
     } else {
         statStreak.textContent = streak > 0 ? `🔥 ${streak}` : '—';
+        console.log(`📊 Stats: Total=${totalBrews}, Showing=${filteredBrews}, Streak=${streak}`);
     }
 }
 
@@ -775,12 +810,22 @@ function updateStats(totalBrews, filteredBrews, streak) {
  * Load and render brews from Firestore
  */
 async function loadAndRenderBrews() {
+    console.log(`🔄 Loading brews for ${isGlobalView ? 'ALL LOCATIONS' : selectedLocation}`);
+    
     allBrewsCache = await loadBrews();
+    
+    console.log(`💾 Loaded ${allBrewsCache.length} brews from Firestore`);
+    
     const filteredBrews = filterBrews(allBrewsCache, currentFilter);
+    
+    console.log(`📊 Filter: ${currentFilter}, Showing: ${filteredBrews.length}/${allBrewsCache.length}`);
+    
     const streak = calculateStreak(allBrewsCache);
     
     renderTable(filteredBrews);
     updateStats(allBrewsCache.length, filteredBrews.length, streak);
+    
+    console.log(`✅ Render complete`);
 }
 
 /**
@@ -885,16 +930,35 @@ async function handleSubmit(e) {
     const shiftId = getShiftIdentifier(now);
     
     // Check for duplicate
-    const existingBrew = await checkDuplicateBrew(selectedBeanType, shiftId);
-    
-    if (existingBrew) {
-        const confirmOverwrite = await showModal(
-            `You've already logged a <strong>${beanType}</strong> brew for the <strong>${shift} shift</strong>.`
-        );
+    let existingBrew = null; // Declare outside try-catch so it's accessible later
+    try {
+        existingBrew = await checkDuplicateBrew(selectedBeanType, shiftId);
         
-        if (!overwrite) {
-            return;
+        if (existingBrew) {
+            console.log('⚠️ Duplicate brew detected');
+            const currentShift = calculateShift(now);
+            const confirmOverwrite = await showModal(
+                `You've already logged a <strong>${selectedBeanType}</strong> brew for the <strong>${currentShift} shift</strong>.`
+            );
+            
+            console.log('User choice:', confirmOverwrite ? 'Replace' : 'Cancel');
+            
+            if (!confirmOverwrite) {
+                // User cancelled - reset button state
+                submitBtn.disabled = false;
+                btnText.classList.remove('hidden');
+                btnSpinner.classList.add('hidden');
+                return;
+            }
         }
+    } catch (error) {
+        console.error('❌ Error checking duplicate:', error);
+        // Reset button state on error
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+        showError('An error occurred. Please try again.');
+        return;
     }
     
     const brewData = {
@@ -907,17 +971,33 @@ async function handleSubmit(e) {
         beanType: selectedBeanType
     };
     
+    console.log('💾 Saving brew data:', brewData);
+    
     // Save or update
-    if (existingBrew) {
-        await updateBrew(existingBrew.id, brewData);
-    } else {
-        await saveBrew(brewData);
+    try {
+        if (existingBrew) {
+            console.log('🔄 Updating existing brew...');
+            await updateBrew(existingBrew.id, brewData);
+        } else {
+            console.log('➕ Creating new brew...');
+            await saveBrew(brewData);
+        }
+        
+        console.log('✅ Brew saved successfully');
+    } catch (error) {
+        console.error('❌ Error saving brew:', error);
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+        showError('Failed to save brew. Please try again.');
+        return;
     }
     
     // Check if shift was just completed
     const shiftCompleted = wasShiftJustCompleted(shiftId, selectedBeanType);
     
     // Reload data from Firestore
+    console.log('🔄 Reloading brews...');
     await loadAndRenderBrews();
     
     // Calculate new streak
@@ -935,6 +1015,8 @@ async function handleSubmit(e) {
     btnSpinner.classList.add('hidden');
 
     triggerHaptic(); // Add haptic feedback
+    
+    console.log('🎉 Submit complete!');
     
     // Show success toast with streak info
     if (shiftCompleted && newStreak > 0) {
