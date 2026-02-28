@@ -30,7 +30,7 @@ if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
 
 // Initialize App Check
 const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6Le15XosAAAAAOOx9dS71_BmHrR1Pl4iJsP4ssH7'),
+  provider: new ReCaptchaV3Provider('6Ld27nosAAAAAL28a3or-z5BuVlLEMM_hRuIGqug'),
   isTokenAutoRefreshEnabled: true
 });
 
