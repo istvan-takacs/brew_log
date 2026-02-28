@@ -1,3 +1,6 @@
+import { initializeAppCheck, ReCaptchaV3Provider } from 
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js';
+
 // Import Firebase SDK from CDN
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { 
@@ -16,8 +19,18 @@ import {
 // Import your Firebase config
 import { firebaseConfig } from './firebase-config.js';
 
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Initialize App Check
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('6Le15XosAAAAAOOx9dS71_BmHrR1Pl4iJsP4ssH7'),
+  isTokenAutoRefreshEnabled: true // Auto-refresh tokens
+});
+
+console.log('✅ App Check initialized');
+
 const db = getFirestore(app);
 
 // Constants
