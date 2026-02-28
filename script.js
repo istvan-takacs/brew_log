@@ -1,6 +1,3 @@
-import { initializeAppCheck, ReCaptchaV3Provider } from 
-  'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js';
-
 // Import Firebase SDK from CDN
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
 import { 
@@ -16,21 +13,30 @@ import {
     Timestamp 
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
+import { initializeAppCheck, ReCaptchaV3Provider } from 
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js';
+
 // Import your Firebase config
 import { firebaseConfig } from './firebase-config.js';
-
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
+// Enable debug mode for localhost testing
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  console.log('🔧 App Check debug mode enabled for localhost');
+}
+
 // Initialize App Check
 const appCheck = initializeAppCheck(app, {
   provider: new ReCaptchaV3Provider('6Le15XosAAAAAOOx9dS71_BmHrR1Pl4iJsP4ssH7'),
-  isTokenAutoRefreshEnabled: true // Auto-refresh tokens
+  isTokenAutoRefreshEnabled: true
 });
 
 console.log('✅ App Check initialized');
 
+// Initialize Firestore
 const db = getFirestore(app);
 
 // Constants
