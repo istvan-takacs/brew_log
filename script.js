@@ -324,11 +324,12 @@ function setupFormValidation() {
         }
     });
     
-    // Time validation
+    // Time validation (dynamic based on bean type)
     timeInputEl.addEventListener('blur', () => {
-        const min = parseInt(timeInputEl.min);
-        const max = parseInt(timeInputEl.max);
-        if (timeInputEl.value && (parseInt(timeInputEl.value) < min || parseInt(timeInputEl.value) > max)) {
+        const config = BEAN_CONFIGS[selectedBeanType];
+        const value = parseInt(timeInputEl.value);
+        if (timeInputEl.value && (value < config.minTime || value > config.maxTime)) {
+            timeHint.textContent = `Must be between ${config.minTime}-${config.maxTime}s`;
             timeHint.classList.remove('hidden');
         } else {
             timeHint.classList.add('hidden');
@@ -336,9 +337,9 @@ function setupFormValidation() {
     });
     
     timeInputEl.addEventListener('input', () => {
-        const min = parseInt(timeInputEl.min);
-        const max = parseInt(timeInputEl.max);
-        if (timeInputEl.value && parseInt(timeInputEl.value) >= min && parseInt(timeInputEl.value) <= max) {
+        const config = BEAN_CONFIGS[selectedBeanType];
+        const value = parseInt(timeInputEl.value);
+        if (timeInputEl.value && value >= config.minTime && value <= config.maxTime) {
             timeHint.classList.add('hidden');
         }
     });
@@ -372,7 +373,7 @@ function setupBeanSelector() {
             // Update selected bean type
             selectedBeanType = btn.dataset.bean;
             
-            // Update time input limits
+            // Update time input limits and hint text
             updateTimeInputLimits();
         });
     });
@@ -386,6 +387,9 @@ function updateTimeInputLimits() {
     timeInput.min = config.minTime;
     timeInput.max = config.maxTime;
     timeInput.placeholder = config.placeholder;
+    
+    // Update hint text to show correct range
+    timeHint.textContent = `Must be between ${config.minTime}-${config.maxTime}s`;
 }
 
 /**
@@ -575,6 +579,41 @@ function groupBrewsByShift(brews) {
 }
 
 /**
+ * Check if two shifts are consecutive (no gap between them)
+ * Shifts follow: Night → AM → PM → Night (next day)
+ */
+function isConsecutiveShift(olderShiftId, newerShiftId) {
+    const [olderYear, olderMonth, olderDay, olderShift] = olderShiftId.split('-');
+    const [newerYear, newerMonth, newerDay, newerShift] = newerShiftId.split('-');
+    
+    const olderDate = new Date(olderYear, parseInt(olderMonth) - 1, parseInt(olderDay));
+    const newerDate = new Date(newerYear, parseInt(newerMonth) - 1, parseInt(newerDay));
+    
+    // Same day shifts
+    if (olderDate.getTime() === newerDate.getTime()) {
+        // Check shift progression: Night → AM → PM
+        if (newerShift === 'Night' && olderShift === 'PM') return false; // Can't go backwards
+        if (newerShift === 'AM' && olderShift === 'Night') return true;
+        if (newerShift === 'PM' && olderShift === 'AM') return true;
+        return false; // Same shift or wrong order
+    }
+    
+    // Check if dates are consecutive (1 day apart)
+    const dayDiff = Math.floor((newerDate - olderDate) / (1000 * 60 * 60 * 24));
+    if (dayDiff !== 1) return false; // More than 1 day gap
+    
+    // Different days - check valid transitions
+    // PM (older day) → Night (newer day) ✅
+    if (olderShift === 'PM' && newerShift === 'Night') return true;
+    // Night (older day) → AM (newer day) ❌ (Night should be followed by AM on same day)
+    if (olderShift === 'Night' && newerShift === 'AM') return false;
+    // AM (older day) → Night (newer day) ❌ (AM should be followed by PM on same day)
+    if (olderShift === 'AM' && newerShift === 'Night') return false;
+    
+    return false;
+}
+
+/**
  * Calculate streak (consecutive complete shifts)
  * A complete shift = both House AND Decaf logged
  */
@@ -613,6 +652,7 @@ function calculateStreak(allBrews) {
     }
     
     let streak = 0;
+    let previousShiftId = null;
     
     for (const shiftId of sortedShiftIds) {
         const brews = groups[shiftId];
@@ -621,15 +661,22 @@ function calculateStreak(allBrews) {
         
         console.log(`  ${shiftId}: House=${hasHouse}, Decaf=${hasDecaf}`);
         
-        // Both beans logged = complete shift
-        if (hasHouse && hasDecaf) {
-            streak++;
-            console.log(`    ✅ Complete shift! Streak: ${streak}`);
-        } else {
-            // Streak broken - stop counting
+        // Check if this shift is complete (both beans logged)
+        if (!hasHouse || !hasDecaf) {
             console.log(`    ❌ Incomplete shift - streak ends at ${streak}`);
             break;
         }
+        
+        // Check if there's a gap between this shift and the previous one
+        if (previousShiftId !== null && !isConsecutiveShift(shiftId, previousShiftId)) {
+            console.log(`    ❌ Gap detected between ${shiftId} and ${previousShiftId} - streak ends at ${streak}`);
+            break;
+        }
+        
+        // This shift is complete and consecutive
+        streak++;
+        previousShiftId = shiftId;
+        console.log(`    ✅ Complete shift! Streak: ${streak}`);
     }
     
     console.log(`🔥 Final streak: ${streak}`);
@@ -956,6 +1003,61 @@ async function handleSubmit(e) {
     const weight = parseFloat(document.getElementById('weight').value);
     const time = parseFloat(document.getElementById('time').value);
     const grind = parseFloat(document.getElementById('grind').value);
+    
+    // Check for invalid/missing values
+    if (isNaN(weight) || isNaN(time) || isNaN(grind)) {
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+        showError('Please fill in all fields with valid numbers');
+        return;
+    }
+    
+    // Validate ranges
+    const timeConfig = BEAN_CONFIGS[selectedBeanType];
+    
+    // Weight validation (18.5 - 19.5g)
+    if (weight < 18.5 || weight > 19.5) {
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+        showError('Weight must be between 18.5-19.5g');
+        weightHint.classList.remove('hidden');
+        weightInput.focus();
+        return;
+    }
+    
+    // Time validation (depends on bean type)
+    if (time < timeConfig.minTime || time > timeConfig.maxTime) {
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+        showError(`Time must be between ${timeConfig.minTime}-${timeConfig.maxTime}s for ${selectedBeanType}`);
+        timeHint.classList.remove('hidden');
+        timeInputEl.focus();
+        return;
+    }
+    
+    // Grind validation (3 - 15s)
+    if (grind < 3 || grind > 15) {
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+        showError('Grind time must be between 3-15s');
+        grindHint.classList.remove('hidden');
+        grindInput.focus();
+        return;
+    }
+    
+    console.log('✅ All values within valid ranges');
+    console.log(`  Weight: ${weight}g (18.5-19.5)`);
+    console.log(`  Time: ${time}s (${timeConfig.minTime}-${timeConfig.maxTime})`);
+    console.log(`  Grind: ${grind}s (3-15)`);
+    
+    // Hide all validation hints since values are valid
+    weightHint.classList.add('hidden');
+    timeHint.classList.add('hidden');
+    grindHint.classList.add('hidden');
     
     // Create brew data object
     const now = new Date();
