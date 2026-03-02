@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /
+
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 10
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 10

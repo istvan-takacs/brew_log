@@ -13,8 +13,8 @@ import {
     Timestamp 
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-import { initializeAppCheck, ReCaptchaV3Provider } from 
-  'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check.js';
+import { getAuth, signInAnonymously } from
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 // Import your Firebase config
 import { firebaseConfig } from './firebase-config.js';
@@ -22,22 +22,30 @@ import { firebaseConfig } from './firebase-config.js';
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Enable debug mode for localhost testing
-if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-  console.log('🔧 App Check debug mode enabled for localhost');
-}
-
-// Initialize App Check
-const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6Ld27nosAAAAAL28a3or-z5BuVlLEMM_hRuIGqug'),
-  isTokenAutoRefreshEnabled: true
-});
-
-console.log('✅ App Check initialized');
-
 // Initialize Firestore
 const db = getFirestore(app);
+
+// Initialize Auth
+const auth = getAuth(app);
+
+/**
+ * Sign in anonymously. Returns a promise that resolves when auth is ready.
+ * This blocks Firestore reads behind a valid auth token so bots that
+ * don't execute JS can't hit the database.
+ */
+async function ensureAuth() {
+    if (auth.currentUser) return auth.currentUser;
+
+    try {
+        const credential = await signInAnonymously(auth);
+        console.log('✅ Signed in anonymously:', credential.user.uid);
+        return credential.user;
+    } catch (error) {
+        console.error('❌ Anonymous auth failed:', error);
+        showError('Authentication failed. Please refresh the page.');
+        throw error;
+    }
+}
 
 // Constants
 const COLLECTION_NAME = 'brews';
@@ -100,42 +108,45 @@ const timeHint = document.getElementById('time-hint');
 const grindHint = document.getElementById('grind-hint');
 
 // Initialize app
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     console.log('🚀 App initializing...');
-    
+
     // Ensure skeleton is hidden on load
     loadingSkeleton.classList.add('hidden');
     brewTable.style.display = '';
-    
+
     // Ensure refresh indicator is hidden
     refreshIndicator.classList.add('hidden');
-    
+
     // Ensure offline banner is hidden initially
     if (navigator.onLine) {
         offlineBanner.classList.add('hidden');
     }
-    
+
     // Restore last selected location from localStorage
     const savedLocation = localStorage.getItem('selectedLocation');
     if (savedLocation && savedLocation !== 'all') {
         selectedLocation = savedLocation;
         isGlobalView = false;
     }
-    
+
     updateLocationTabs();
-    
+
     // Setup network status monitoring
     setupNetworkMonitoring();
-    
+
     // Setup pull-to-refresh
     setupPullToRefresh();
-    
+
     // Setup modal
     setupModal();
-    
+
     // Setup form validation
     setupFormValidation();
-    
+
+    // Authenticate before loading any data
+    await ensureAuth();
+
     loadAndRenderBrews();
     form.addEventListener('submit', handleSubmit);
     setupFilterTabs();
