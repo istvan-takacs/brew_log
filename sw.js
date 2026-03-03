@@ -1,5 +1,5 @@
 // Brew Log Service Worker
-const CACHE_NAME = 'brewlog-v1';
+const CACHE_NAME = 'brewlog-v2';
 
 // Static assets to pre-cache on install
 const PRECACHE_URLS = [
@@ -12,7 +12,12 @@ const PRECACHE_URLS = [
     '/icons/icon-192.svg',
     '/icons/icon-512.svg',
     '/icons/icon-maskable-192.svg',
-    '/icons/icon-maskable-512.svg'
+    '/icons/icon-maskable-512.svg',
+    '/icons/icon-192.png',
+    '/icons/icon-512.png',
+    '/icons/icon-maskable-192.png',
+    '/icons/icon-maskable-512.png',
+    '/icons/apple-touch-icon.png'
 ];
 
 // ─── INSTALL ───────────────────────────────────────────
