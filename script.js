@@ -1,16 +1,18 @@
 // Import Firebase SDK from CDN
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
-import { 
-    getFirestore, 
-    collection, 
-    addDoc, 
-    query, 
-    orderBy, 
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    query,
+    orderBy,
     getDocs,
     where,
     deleteDoc,
     doc,
-    Timestamp 
+    Timestamp,
+    writeBatch,
+    limit as firestoreLimit
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 import { getAuth, signInAnonymously } from
@@ -101,11 +103,19 @@ const submitBtn = document.getElementById('submit-btn');
 const btnText = submitBtn.querySelector('.btn-text');
 const btnSpinner = submitBtn.querySelector('.btn-spinner');
 const weightInput = document.getElementById('weight');
-const timeInputEl = document.getElementById('time');
 const grindInput = document.getElementById('grind');
 const weightHint = document.getElementById('weight-hint');
 const timeHint = document.getElementById('time-hint');
 const grindHint = document.getElementById('grind-hint');
+const shiftStatusEl = document.getElementById('shift-status');
+const statShowingLabel = document.getElementById('stat-showing-label');
+
+// Filter label map
+const FILTER_LABELS = {
+    today: 'Today',
+    week: 'This Week',
+    all: 'All Time'
+};
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', async () => {
@@ -355,10 +365,10 @@ function setupFormValidation() {
     });
     
     // Time validation (dynamic based on bean type)
-    timeInputEl.addEventListener('blur', () => {
+    timeInput.addEventListener('blur', () => {
         const config = BEAN_CONFIGS[selectedBeanType];
-        const value = parseInt(timeInputEl.value);
-        if (timeInputEl.value && (value < config.minTime || value > config.maxTime)) {
+        const value = parseInt(timeInput.value);
+        if (timeInput.value && (value < config.minTime || value > config.maxTime)) {
             timeHint.textContent = `Must be between ${config.minTime}-${config.maxTime}s`;
             timeHint.classList.remove('hidden');
         } else {
@@ -366,10 +376,10 @@ function setupFormValidation() {
         }
     });
     
-    timeInputEl.addEventListener('input', () => {
+    timeInput.addEventListener('input', () => {
         const config = BEAN_CONFIGS[selectedBeanType];
-        const value = parseInt(timeInputEl.value);
-        if (timeInputEl.value && value >= config.minTime && value <= config.maxTime) {
+        const value = parseInt(timeInput.value);
+        if (timeInput.value && value >= config.minTime && value <= config.maxTime) {
             timeHint.classList.add('hidden');
         }
     });
@@ -443,15 +453,23 @@ function calculateShift(date) {
 /**
  * Get shift identifier for grouping
  * Format: "YYYY-MM-DD-SHIFT"
- * Night shift uses start date (when it begins at 11pm)
+ * Night shift uses start date (when it begins at 11pm).
+ * Brews logged between midnight and 6:59am belong to the previous day's Night shift.
  */
 function getShiftIdentifier(date) {
     const d = new Date(date);
+    const hour = d.getHours();
+    const shift = calculateShift(d);
+
+    // Past-midnight Night shift (0:00-6:59): roll back to previous day
+    if (shift === 'Night' && hour < 7) {
+        d.setDate(d.getDate() - 1);
+    }
+
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
-    const shift = calculateShift(d);
-    
+
     return `${year}-${month}-${day}-${shift}`;
 }
 
@@ -515,50 +533,41 @@ async function checkDuplicateBrew(beanType, shiftId) {
  * Save brew to Firestore
  */
 async function saveBrew(brewData) {
-    try {
-        await addDoc(collection(db, COLLECTION_NAME), brewData);
-        console.log('✅ Brew saved to Firestore');
-    } catch (error) {
-        console.error('❌ Error saving brew:', error);
-        alert('Failed to save brew. Check console for details.');
-    }
+    await addDoc(collection(db, COLLECTION_NAME), brewData);
+    console.log('✅ Brew saved to Firestore');
 }
 
 /**
- * Update existing brew
+ * Update existing brew (atomic delete + create via batch)
  */
 async function updateBrew(brewId, brewData) {
-    try {
-        await deleteDoc(doc(db, COLLECTION_NAME, brewId));
-        await addDoc(collection(db, COLLECTION_NAME), brewData);
-        console.log('✅ Brew updated in Firestore');
-    } catch (error) {
-        console.error('❌ Error updating brew:', error);
-        alert('Failed to update brew. Check console for details.');
-    }
+    const batch = writeBatch(db);
+    const oldRef = doc(db, COLLECTION_NAME, brewId);
+    const newRef = doc(collection(db, COLLECTION_NAME));
+    batch.delete(oldRef);
+    batch.set(newRef, brewData);
+    await batch.commit();
+    console.log('✅ Brew updated in Firestore (atomic)');
 }
 
 /**
  * Load brews from Firestore (filtered by location if not in global view)
+ * Applies limit(200) for today/week filters to save reads; no limit for 'all'.
  */
 async function loadBrews() {
     showLoading();
     try {
         let q;
-        
+        const useLimit = currentFilter !== 'all';
+
         if (isGlobalView) {
-            // Global view - get all brews from all locations
-            q = query(
-                collection(db, COLLECTION_NAME),
-                orderBy('timestamp', 'desc')
-            );
+            q = useLimit
+                ? query(collection(db, COLLECTION_NAME), orderBy('timestamp', 'desc'), firestoreLimit(200))
+                : query(collection(db, COLLECTION_NAME), orderBy('timestamp', 'desc'));
         } else {
-            // Location-specific view - filter by selected location
-            q = query(
-                collection(db, COLLECTION_NAME),
-                where('location', '==', selectedLocation),
-                orderBy('timestamp', 'desc')
-            );
+            q = useLimit
+                ? query(collection(db, COLLECTION_NAME), where('location', '==', selectedLocation), orderBy('timestamp', 'desc'), firestoreLimit(200))
+                : query(collection(db, COLLECTION_NAME), where('location', '==', selectedLocation), orderBy('timestamp', 'desc'));
         }
         
         const querySnapshot = await getDocs(q);
@@ -610,36 +619,33 @@ function groupBrewsByShift(brews) {
 
 /**
  * Check if two shifts are consecutive (no gap between them)
- * Shifts follow: Night → AM → PM → Night (next day)
+ * With night-shift date rollback, identifiers for a single day are:
+ *   day N-AM (07:00-14:59), day N-PM (15:00-22:59), day N-Night (23:00-06:59 next day)
+ * Same-day progression: AM → PM → Night
+ * Cross-day progression: Night (day N) → AM (day N+1)
  */
 function isConsecutiveShift(olderShiftId, newerShiftId) {
     const [olderYear, olderMonth, olderDay, olderShift] = olderShiftId.split('-');
     const [newerYear, newerMonth, newerDay, newerShift] = newerShiftId.split('-');
-    
+
     const olderDate = new Date(olderYear, parseInt(olderMonth) - 1, parseInt(olderDay));
     const newerDate = new Date(newerYear, parseInt(newerMonth) - 1, parseInt(newerDay));
-    
-    // Same day shifts
+
+    // Same day shifts: AM → PM → Night
     if (olderDate.getTime() === newerDate.getTime()) {
-        // Check shift progression: Night → AM → PM
-        if (newerShift === 'Night' && olderShift === 'PM') return false; // Can't go backwards
-        if (newerShift === 'AM' && olderShift === 'Night') return true;
-        if (newerShift === 'PM' && olderShift === 'AM') return true;
-        return false; // Same shift or wrong order
+        if (olderShift === 'AM' && newerShift === 'PM') return true;
+        if (olderShift === 'PM' && newerShift === 'Night') return true;
+        if (olderShift === 'AM' && newerShift === 'Night') return true; // PM was skipped
+        return false;
     }
-    
-    // Check if dates are consecutive (1 day apart)
+
+    // Cross-day: must be exactly 1 day apart
     const dayDiff = Math.floor((newerDate - olderDate) / (1000 * 60 * 60 * 24));
-    if (dayDiff !== 1) return false; // More than 1 day gap
-    
-    // Different days - check valid transitions
-    // PM (older day) → Night (newer day) ✅
-    if (olderShift === 'PM' && newerShift === 'Night') return true;
-    // Night (older day) → AM (newer day) ❌ (Night should be followed by AM on same day)
-    if (olderShift === 'Night' && newerShift === 'AM') return false;
-    // AM (older day) → Night (newer day) ❌ (AM should be followed by PM on same day)
-    if (olderShift === 'AM' && newerShift === 'Night') return false;
-    
+    if (dayDiff !== 1) return false;
+
+    // Night (day N, ends 06:59 of day N+1) → AM (day N+1, starts 07:00)
+    if (olderShift === 'Night' && newerShift === 'AM') return true;
+
     return false;
 }
 
@@ -904,7 +910,8 @@ function filterBrews(brews, filter) {
 function updateStats(totalBrews, filteredBrews, streak) {
     statTotal.textContent = totalBrews;
     statShowing.textContent = filteredBrews;
-    
+    statShowingLabel.textContent = FILTER_LABELS[currentFilter] || 'Showing';
+
     // Only show streak in location-specific view
     if (isGlobalView) {
         statStreak.textContent = '—';
@@ -913,6 +920,36 @@ function updateStats(totalBrews, filteredBrews, streak) {
         statStreak.textContent = streak > 0 ? `🔥 ${streak}` : '—';
         console.log(`📊 Stats: Total=${totalBrews}, Showing=${filteredBrews}, Streak=${streak}`);
     }
+}
+
+/**
+ * Update shift status indicator showing which beans are logged for the current shift
+ */
+function updateShiftStatus() {
+    if (!shiftStatusEl) return;
+
+    // Hide in global view
+    if (isGlobalView) {
+        shiftStatusEl.innerHTML = '';
+        return;
+    }
+
+    const now = new Date();
+    const currentShiftId = getShiftIdentifier(now);
+    const currentShift = calculateShift(now);
+
+    const shiftBrews = allBrewsCache.filter(brew =>
+        brew.location === selectedLocation &&
+        getShiftIdentifier(brew.timestamp) === currentShiftId
+    );
+
+    const hasHouse = shiftBrews.some(b => b.beanType === 'House');
+    const hasDecaf = shiftBrews.some(b => b.beanType === 'Decaf');
+
+    shiftStatusEl.innerHTML = `
+        <span class="status-bean ${hasHouse ? 'logged' : 'missing'}">${hasHouse ? '✅' : '◻️'} House</span>
+        <span class="status-bean ${hasDecaf ? 'logged' : 'missing'}">${hasDecaf ? '✅' : '◻️'} Decaf</span>
+    `;
 }
 
 /**
@@ -933,7 +970,8 @@ async function loadAndRenderBrews() {
     
     renderTable(filteredBrews);
     updateStats(allBrewsCache.length, filteredBrews.length, streak);
-    
+    updateShiftStatus();
+
     console.log(`✅ Render complete`);
 }
 
@@ -1000,19 +1038,27 @@ function setupLocationTabs() {
  */
 function setupFilterTabs() {
     filterTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+        tab.addEventListener('click', async () => {
+            const previousFilter = currentFilter;
+
             // Update active state
             filterTabs.forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
-            
+
             // Update current filter
             currentFilter = tab.dataset.filter;
-            
-            // Re-render with cached data (no need to re-fetch)
-            const filteredBrews = filterBrews(allBrewsCache, currentFilter);
-            const streak = calculateStreak(allBrewsCache);
-            renderTable(filteredBrews);
-            updateStats(allBrewsCache.length, filteredBrews.length, streak);
+
+            // Re-fetch if switching to/from 'all' (query limit changes)
+            const limitChanged = (previousFilter === 'all') !== (currentFilter === 'all');
+            if (limitChanged) {
+                await loadAndRenderBrews();
+            } else {
+                // Re-render with cached data
+                const filteredBrews = filterBrews(allBrewsCache, currentFilter);
+                const streak = calculateStreak(allBrewsCache);
+                renderTable(filteredBrews);
+                updateStats(allBrewsCache.length, filteredBrews.length, streak);
+            }
         });
     });
 }
@@ -1064,7 +1110,7 @@ async function handleSubmit(e) {
         btnSpinner.classList.add('hidden');
         showError(`Time must be between ${timeConfig.minTime}-${timeConfig.maxTime}s for ${selectedBeanType}`);
         timeHint.classList.remove('hidden');
-        timeInputEl.focus();
+        timeInput.focus();
         return;
     }
     
@@ -1237,7 +1283,7 @@ document.querySelectorAll('input[type="number"], input[type="text"][inputmode="d
         // Replace comma with dot for decimal separator
         const value = e.target.value;
         if (value.includes(',')) {
-            e.target.value = value.replace(',', '.');
+            e.target.value = value.replace(/,/g, '.');
         }
     });
     

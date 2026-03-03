@@ -185,6 +185,8 @@ h2 {
 }
 
 .form-content {
+    max-height: 800px;
+    overflow: hidden;
     transition: max-height 0.3s ease, opacity 0.3s ease;
 }
 
@@ -192,6 +194,39 @@ h2 {
     max-height: 0;
     opacity: 0;
     overflow: hidden;
+}
+
+/* Shift Status Indicator */
+.shift-status {
+    display: flex;
+    gap: var(--gap-md);
+    padding: 0.625rem var(--gap-md);
+    margin-bottom: var(--gap-md);
+    background-color: var(--bg-primary);
+    border-radius: var(--radius-md);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    justify-content: center;
+}
+
+.shift-status:empty {
+    display: none;
+}
+
+.shift-status .status-bean {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 500;
+}
+
+.shift-status .status-bean.logged {
+    color: #388E3C;
+}
+
+.shift-status .status-bean.missing {
+    color: var(--text-secondary);
+    opacity: 0.6;
 }
 
 /* Bean Type Selector (Segmented Control) */
@@ -653,11 +688,6 @@ tbody .brew-badges .location-badge {
     margin-top: 0.5rem;
 }
 
-/* Smooth Transitions (Global) */
-* {
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
-}
-
 /* Enhanced Focus States */
 *:focus-visible {
     outline: 2px solid var(--accent-primary);
@@ -937,6 +967,12 @@ button[type="submit"]:disabled {
     body {
         padding: 0;
         padding-bottom: calc(var(--mobile-touch-target) + env(safe-area-inset-bottom, 0px)); /* Space for bottom tabs */
+        overscroll-behavior-y: contain;
+    }
+
+    /* Position toast above bottom tab bar */
+    .toast {
+        bottom: calc(60px + env(safe-area-inset-bottom, 0px) + var(--gap-md));
     }
     
     /* Header - Compact */
