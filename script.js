@@ -6,7 +6,7 @@ import {
     addDoc,
     query,
     orderBy,
-    getDocs,
+    onSnapshot,
     where,
     deleteDoc,
     doc,
@@ -71,7 +71,9 @@ let currentFilter = 'today';
 let selectedBeanType = 'House'; // Default to House
 let selectedLocation = 'Shoreditch'; // Default location
 let isGlobalView = false; // Track if viewing all locations
-let allBrewsCache = []; // Cache to avoid re-fetching
+let allBrewsCache = []; // Current brew data (kept live by onSnapshot)
+let activeUnsubscribe = null; // Current onSnapshot unsubscribe function
+let snapshotPromise = null;   // { resolve } — for post-write await
 
 // DOM Elements
 const form = document.getElementById('brew-log');
@@ -157,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Authenticate before loading any data
     await ensureAuth();
 
-    loadAndRenderBrews();
+    subscribeToBrew();
     form.addEventListener('submit', handleSubmit);
     setupFilterTabs();
     setupBeanSelector();
@@ -225,6 +227,7 @@ function setupNetworkMonitoring() {
     window.addEventListener('online', () => {
         offlineBanner.classList.add('hidden');
         showToast('Back online! ✅');
+        subscribeToBrew(); // Resubscribe to get fresh data
     });
     
     window.addEventListener('offline', () => {
@@ -268,7 +271,7 @@ function setupPullToRefresh() {
         if (isPulling && pullDistance > 80) {
             refreshIndicator.classList.remove('hidden');
             try {
-                await loadAndRenderBrews();
+                subscribeToBrew();
                 showToast('Refreshed! ✅');
                 triggerHaptic();
             } catch (error) {
@@ -561,53 +564,106 @@ async function updateBrew(brewId, brewData) {
 }
 
 /**
- * Load brews from Firestore (filtered by location if not in global view)
+ * Build a Firestore query based on current view state.
  * Applies limit(200) for today/week filters to save reads; no limit for 'all'.
  */
-async function loadBrews() {
-    showLoading();
-    try {
-        let q;
-        const useLimit = currentFilter !== 'all';
+function buildQuery() {
+    const useLimit = currentFilter !== 'all';
 
-        if (isGlobalView) {
-            q = useLimit
-                ? query(collection(db, COLLECTION_NAME), orderBy('timestamp', 'desc'), firestoreLimit(200))
-                : query(collection(db, COLLECTION_NAME), orderBy('timestamp', 'desc'));
-        } else {
-            q = useLimit
-                ? query(collection(db, COLLECTION_NAME), where('location', '==', selectedLocation), orderBy('timestamp', 'desc'), firestoreLimit(200))
-                : query(collection(db, COLLECTION_NAME), where('location', '==', selectedLocation), orderBy('timestamp', 'desc'));
-        }
-        
-        const querySnapshot = await getDocs(q);
-        const brews = [];
-        
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const timestamp = data.timestamp.toDate();
-            brews.push({
-                id: doc.id,
-                location: data.location,
-                extractionWeight: data.extractionWeight,
-                extractionTime: data.extractionTime,
-                grindTime: data.grindTime,
-                beanType: data.beanType,
-                timestamp: timestamp.toISOString(),
-                // Always recalculate shift from timestamp (don't trust stored value)
-                shift: calculateShift(timestamp)
-            });
+    if (isGlobalView) {
+        return useLimit
+            ? query(collection(db, COLLECTION_NAME), orderBy('timestamp', 'desc'), firestoreLimit(200))
+            : query(collection(db, COLLECTION_NAME), orderBy('timestamp', 'desc'));
+    } else {
+        return useLimit
+            ? query(collection(db, COLLECTION_NAME), where('location', '==', selectedLocation), orderBy('timestamp', 'desc'), firestoreLimit(200))
+            : query(collection(db, COLLECTION_NAME), where('location', '==', selectedLocation), orderBy('timestamp', 'desc'));
+    }
+}
+
+/**
+ * Parse a Firestore snapshot into a brew array.
+ */
+function parseSnapshot(querySnapshot) {
+    const brews = [];
+    querySnapshot.forEach((d) => {
+        const data = d.data();
+        const timestamp = data.timestamp.toDate();
+        brews.push({
+            id: d.id,
+            location: data.location,
+            extractionWeight: data.extractionWeight,
+            extractionTime: data.extractionTime,
+            grindTime: data.grindTime,
+            beanType: data.beanType,
+            timestamp: timestamp.toISOString(),
+            // Always recalculate shift from timestamp (don't trust stored value)
+            shift: calculateShift(timestamp)
         });
-        
-        console.log(`📊 Loaded ${brews.length} brews from Firestore`);
-        hideLoading();
-        return brews;
-    } catch (error) {
-        console.error('❌ Error loading brews:', error);
+    });
+    return brews;
+}
+
+/**
+ * Re-render the UI from the current allBrewsCache.
+ */
+function renderFromCache() {
+    const filteredBrews = filterBrews(allBrewsCache, currentFilter);
+    const streak = calculateStreak(allBrewsCache);
+    renderTable(filteredBrews);
+    updateStats(allBrewsCache.length, filteredBrews.length, streak);
+    updateShiftStatus();
+}
+
+/**
+ * Subscribe to real-time Firestore updates.
+ * Unsubscribes any previous listener, then starts a new one.
+ * Each snapshot updates allBrewsCache and re-renders the UI.
+ */
+function subscribeToBrew() {
+    // Unsubscribe previous listener
+    if (activeUnsubscribe) {
+        activeUnsubscribe();
+        activeUnsubscribe = null;
+    }
+
+    showLoading();
+    let isFirstSnapshot = true;
+
+    const q = buildQuery();
+    console.log(`🔄 Subscribing to brews for ${isGlobalView ? 'ALL LOCATIONS' : selectedLocation}`);
+
+    activeUnsubscribe = onSnapshot(q, (querySnapshot) => {
+        allBrewsCache = parseSnapshot(querySnapshot);
+        console.log(`📊 Snapshot: ${allBrewsCache.length} brews`);
+
+        if (isFirstSnapshot) {
+            hideLoading();
+            isFirstSnapshot = false;
+        }
+
+        renderFromCache();
+
+        // Resolve any pending snapshot promise (for post-write flow)
+        if (snapshotPromise) {
+            snapshotPromise.resolve();
+            snapshotPromise = null;
+        }
+    }, (error) => {
+        console.error('❌ Snapshot error:', error);
         hideLoading();
         showError('Failed to load brews. Check your connection.');
-        return [];
-    }
+    });
+}
+
+/**
+ * Returns a promise that resolves when the next onSnapshot callback fires.
+ * Used by handleSubmit to wait for a write to be reflected in allBrewsCache.
+ */
+function waitForSnapshot() {
+    return new Promise(resolve => {
+        snapshotPromise = { resolve };
+    });
 }
 
 /**
@@ -963,29 +1019,6 @@ function updateShiftStatus() {
 }
 
 /**
- * Load and render brews from Firestore
- */
-async function loadAndRenderBrews() {
-    console.log(`🔄 Loading brews for ${isGlobalView ? 'ALL LOCATIONS' : selectedLocation}`);
-    
-    allBrewsCache = await loadBrews();
-    
-    console.log(`💾 Loaded ${allBrewsCache.length} brews from Firestore`);
-    
-    const filteredBrews = filterBrews(allBrewsCache, currentFilter);
-    
-    console.log(`📊 Filter: ${currentFilter}, Showing: ${filteredBrews.length}/${allBrewsCache.length}`);
-    
-    const streak = calculateStreak(allBrewsCache);
-    
-    renderTable(filteredBrews);
-    updateStats(allBrewsCache.length, filteredBrews.length, streak);
-    updateShiftStatus();
-
-    console.log(`✅ Render complete`);
-}
-
-/**
  * Update location tabs to show active state
  */
 function updateLocationTabs() {
@@ -1037,8 +1070,8 @@ function setupLocationTabs() {
             // Update tab UI
             updateLocationTabs();
             
-            // Reload data
-            await loadAndRenderBrews();
+            // Resubscribe with new location
+            subscribeToBrew();
         });
     });
 }
@@ -1058,16 +1091,13 @@ function setupFilterTabs() {
             // Update current filter
             currentFilter = tab.dataset.filter;
 
-            // Re-fetch if switching to/from 'all' (query limit changes)
+            // Resubscribe if switching to/from 'all' (query limit changes)
             const limitChanged = (previousFilter === 'all') !== (currentFilter === 'all');
             if (limitChanged) {
-                await loadAndRenderBrews();
+                subscribeToBrew();
             } else {
-                // Re-render with cached data
-                const filteredBrews = filterBrews(allBrewsCache, currentFilter);
-                const streak = calculateStreak(allBrewsCache);
-                renderTable(filteredBrews);
-                updateStats(allBrewsCache.length, filteredBrews.length, streak);
+                // Re-render from live cache (no re-subscribe needed)
+                renderFromCache();
             }
         });
     });
@@ -1193,7 +1223,11 @@ async function handleSubmit(e) {
     
     console.log('💾 Saving brew data:', brewData);
     
-    // Save or update
+    // Check if shift was just completed (before write, using current cache)
+    const shiftCompleted = wasShiftJustCompleted(shiftId, selectedBeanType);
+
+    // Save or update — wait for onSnapshot to reflect the write
+    const nextSnapshot = waitForSnapshot();
     try {
         if (existingBrew) {
             console.log('🔄 Updating existing brew...');
@@ -1202,25 +1236,21 @@ async function handleSubmit(e) {
             console.log('➕ Creating new brew...');
             await saveBrew(brewData);
         }
-        
-        console.log('✅ Brew saved successfully');
+
+        console.log('✅ Brew saved, waiting for snapshot...');
+        await nextSnapshot; // onSnapshot fires, updates allBrewsCache + re-renders
+        console.log('✅ Snapshot received');
     } catch (error) {
         console.error('❌ Error saving brew:', error);
+        snapshotPromise = null; // Clean up pending promise
         submitBtn.disabled = false;
         btnText.classList.remove('hidden');
         btnSpinner.classList.add('hidden');
         showError('Failed to save brew. Please try again.');
         return;
     }
-    
-    // Check if shift was just completed
-    const shiftCompleted = wasShiftJustCompleted(shiftId, selectedBeanType);
-    
-    // Reload data from Firestore
-    console.log('🔄 Reloading brews...');
-    await loadAndRenderBrews();
-    
-    // Calculate new streak
+
+    // Calculate new streak (allBrewsCache is now updated by onSnapshot)
     const newStreak = calculateStreak(allBrewsCache);
     
     // Reset form
