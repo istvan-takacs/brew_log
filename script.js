@@ -164,6 +164,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupLocationTabs();
     setupFormToggle();
     updateTimeInputLimits(); // Set initial limits for House
+
+    // Register service worker for PWA support
+    if ('serviceWorker' in navigator) {
+        try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('✅ Service worker registered:', registration.scope);
+        } catch (error) {
+            console.error('❌ Service worker registration failed:', error);
+        }
+    }
 });
 
 /**

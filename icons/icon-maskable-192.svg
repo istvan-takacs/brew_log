@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="192" height="192">
+  <!-- Full bleed background for maskable -->
+  <rect width="512" height="512" fill="#8D6E63"/>
+  <g transform="translate(128, 120)">
+    <!-- Coffee cup body (white on brown) -->
+    <rect x="20" y="90" width="160" height="160" rx="20" fill="#FAFAFA"/>
+    <!-- Cup handle -->
+    <path d="M180,120 Q230,120 230,170 Q230,220 180,220" fill="none" stroke="#FAFAFA" stroke-width="22" stroke-linecap="round"/>
+    <!-- Steam lines -->
+    <path d="M65,75 Q73,45 65,15" fill="none" stroke="#C19A6B" stroke-width="10" stroke-linecap="round"/>
+    <path d="M100,68 Q108,38 100,8" fill="none" stroke="#C19A6B" stroke-width="10" stroke-linecap="round"/>
+    <path d="M135,75 Q143,45 135,15" fill="none" stroke="#C19A6B" stroke-width="10" stroke-linecap="round"/>
+    <!-- Coffee surface -->
+    <ellipse cx="100" cy="110" rx="64" ry="10" fill="#6D4C41"/>
+  </g>
+</svg>
