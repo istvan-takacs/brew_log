@@ -44,6 +44,10 @@
     -webkit-text-size-adjust: 100%;
 }
 
+html {
+    background-color: #F5E6D3; /* Warm cream for overscroll area */
+}
+
 body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
