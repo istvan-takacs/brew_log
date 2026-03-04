@@ -1,5 +1,5 @@
 // Brew Log Service Worker
-const CACHE_NAME = 'brewlog-v3';
+const CACHE_NAME = 'brewlog-v4';
 
 // Static assets to pre-cache on install
 const PRECACHE_URLS = [
