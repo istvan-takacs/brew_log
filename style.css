@@ -45,15 +45,20 @@
 }
 
 html {
-    background-color: #F5E6D3; /* Warm cream for overscroll area */
+    background-color: var(--text-secondary);
+    background-image: linear-gradient(to bottom, var(--text-secondary), var(--bg-primary) 600px);
+    background-attachment: fixed;
+    min-height: 100vh;
 }
 
 body {
-    background-color: var(--bg-primary);
+    background: transparent;
     color: var(--text-primary);
     min-height: 100vh;
     padding: var(--gap-lg);
+    overflow-x: hidden;
 }
+
 
 /* Utility Classes */
 .hidden {
@@ -70,7 +75,7 @@ h1 {
     font-size: 2.5rem;
     font-weight: 600;
     margin-bottom: var(--gap-lg);
-    color: var(--text-primary);
+    color: var(--bg-primary);
     text-align: center;
 }
 
@@ -979,9 +984,9 @@ button[type="submit"]:disabled {
         bottom: calc(60px + env(safe-area-inset-bottom, 0px) + var(--gap-md));
     }
     
-    /* Header - Compact with cream background */
+    /* Header - Transparent so body gradient shows through */
     header {
-        background-color: #F5E6D3;
+        background-color: transparent;
         padding: var(--gap-md) var(--gap-md) var(--gap-md);
         margin-bottom: var(--gap-md);
     }

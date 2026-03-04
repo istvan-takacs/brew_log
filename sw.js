@@ -50,6 +50,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
+    // Skip all caching on localhost — always fetch fresh during development
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+        return;
+    }
+
     // Strategy 1: Network-only for Firebase API calls
     // These MUST go to the network for fresh data and auth.
     // When offline, they fail naturally and the app's existing
