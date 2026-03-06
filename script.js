@@ -381,10 +381,12 @@ function setupFormValidation() {
     timeInput.addEventListener('blur', () => {
         const config = BEAN_CONFIGS[selectedBeanType];
         const value = parseInt(timeInput.value);
+        const courseFine = value > config.maxTime ? "courser" : "finer";
         if (timeInput.value && (value < config.minTime || value > config.maxTime)) {
-            timeHint.textContent = `Must be between ${config.minTime}-${config.maxTime}s`;
+            timeHint.textContent = `Must be between ${config.minTime}-${config.maxTime}s. Try adjusting the grinder wheel to make it ${courseFine}.`;
             timeHint.classList.remove('hidden');
-        } else {
+        }
+        else {
             timeHint.classList.add('hidden');
         }
     });
@@ -1146,9 +1148,10 @@ async function handleSubmit(e) {
     // Time validation (depends on bean type)
     if (time < timeConfig.minTime || time > timeConfig.maxTime) {
         submitBtn.disabled = false;
+        const courseFine = value > config.maxTime ? "courser" : "finer";
         btnText.classList.remove('hidden');
         btnSpinner.classList.add('hidden');
-        showError(`Time must be between ${timeConfig.minTime}-${timeConfig.maxTime}s for ${selectedBeanType}`);
+        showError(`Time must be between ${timeConfig.minTime}-${timeConfig.maxTime}s for ${selectedBeanType}. Try adjusting the grinder wheel to make it ${courseFine}.`);
         timeHint.classList.remove('hidden');
         timeInput.focus();
         return;

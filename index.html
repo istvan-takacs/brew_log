@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <meta name="theme-color" content="#6D4C41">
+    <meta name="theme-color" content="#8D6E63">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Brew Log">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.svg">
     <title>Brew Log</title>
     <link href="style.css" rel="stylesheet">
 </head>
@@ -52,17 +52,17 @@
                 <div class="weight">
                     <label for="weight">Weight (g)</label>
                     <input type="text" inputmode="decimal" id="weight" name="weight" pattern="[0-9]+([\.\,][0-9]+)?" step="0.1" min="18.5" max="19.5" lang="en" placeholder="19" required>
-                    <span class="input-hint hidden" id="weight-hint">Must be between 18.5-19.5g</span>
+                    <span class="input-hint hidden" id="weight-hint">Must be between 18.5-19.5g. Try adjusting the grinding time.</span>
                 </div>
                 <div class="time">
                     <label for="time">Time (s)</label>
                     <input type="text" inputmode="decimal" id="time" name="time" pattern="[0-9]+([\.\,][0-9]+)?" step="1" min="24" max="30" lang="en" placeholder="27" required>
-                    <span class="input-hint hidden" id="time-hint">Must be between 26-30s</span>
+                    <span class="input-hint hidden" id="time-hint">Must be between 26-30s.</span>
                 </div>
                 <div class="grind">
                     <label for="grind">Grinder time (s)</label>
                     <input type="text" inputmode="decimal" id="grind" name="grind" pattern="[0-9]+([\.\,][0-9]+)?" step="0.05" min="3" max="15" lang="en" placeholder="6" required>
-                    <span class="input-hint hidden" id="grind-hint">Must be between 3-15s</span>
+                    <span class="input-hint hidden" id="grind-hint">Must be between 3-15s.</span>
                 </div>
                 <div class="log-btn">
                     <button type="submit" id="submit-btn">
