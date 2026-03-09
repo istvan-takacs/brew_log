@@ -10,6 +10,7 @@ import {
     where,
     deleteDoc,
     doc,
+    getDocs,
     Timestamp,
     writeBatch,
     limit as firestoreLimit
@@ -531,17 +532,65 @@ function formatTimestamp(date) {
 }
 
 /**
- * Check if a brew already exists for this shift and bean type (at current location)
+ * Get the start and end timestamps for a given shift identifier.
+ * shiftId format: "YYYY-MM-DD-SHIFT"
+ */
+function getShiftBoundaries(shiftId) {
+    const parts = shiftId.split('-');
+    const shift = parts[3];
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
+
+    if (shift === 'AM') {
+        return {
+            start: new Date(year, month, day, 7, 0, 0),
+            end:   new Date(year, month, day, 15, 0, 0)
+        };
+    } else if (shift === 'PM') {
+        return {
+            start: new Date(year, month, day, 15, 0, 0),
+            end:   new Date(year, month, day, 23, 0, 0)
+        };
+    } else {
+        // Night: 23:00 on the date through 07:00 the next day
+        return {
+            start: new Date(year, month, day, 23, 0, 0),
+            end:   new Date(year, month, day + 1, 7, 0, 0)
+        };
+    }
+}
+
+/**
+ * Check if a brew already exists for this shift and bean type (at current location).
+ * Queries Firestore directly to avoid stale-cache false negatives.
  */
 async function checkDuplicateBrew(beanType, shiftId) {
-    const existingBrew = allBrewsCache.find(brew => {
-        const brewShiftId = getShiftIdentifier(brew.timestamp);
-        return brew.location === selectedLocation && 
-               brewShiftId === shiftId && 
-               brew.beanType === beanType;
-    });
-    
-    return existingBrew;
+    const { start, end } = getShiftBoundaries(shiftId);
+    const q = query(
+        collection(db, COLLECTION_NAME),
+        where('location', '==', selectedLocation),
+        where('beanType', '==', beanType),
+        where('timestamp', '>=', Timestamp.fromDate(start)),
+        where('timestamp', '<',  Timestamp.fromDate(end))
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+
+    // Return the first match in the same shape the rest of the code expects
+    const d = snapshot.docs[0];
+    const data = d.data();
+    const timestamp = data.timestamp.toDate();
+    return {
+        id: d.id,
+        location: data.location,
+        extractionWeight: data.extractionWeight,
+        extractionTime: data.extractionTime,
+        grindTime: data.grindTime,
+        beanType: data.beanType,
+        timestamp: timestamp.toISOString(),
+        shift: calculateShift(timestamp)
+    };
 }
 
 /**
@@ -744,39 +793,51 @@ function calculateStreak(allBrews) {
     // Get the current shift ID based on current time
     const currentShiftId = getShiftIdentifier(new Date());
     const mostRecentLoggedShiftId = sortedShiftIds[0];
-    
+
     console.log(`🕐 Current shift: ${currentShiftId}`);
     console.log(`📝 Most recent logged shift: ${mostRecentLoggedShiftId}`);
-    
-    // If the most recent logged shift is NOT the current shift, streak = 0
-    // (This means a shift has passed since the last brew was logged)
+
+    // If the most recent logged shift is not the current shift, check whether
+    // the current shift is the immediate next one (grace period). If there's a
+    // gap of more than one shift the streak is broken.
     if (currentShiftId !== mostRecentLoggedShiftId) {
-        console.log('❌ Current shift has no brews - streak broken');
-        return 0;
+        if (!isConsecutiveShift(mostRecentLoggedShiftId, currentShiftId)) {
+            console.log('❌ Gap between last logged shift and current shift - streak broken');
+            return 0;
+        }
+        console.log('⏳ Current shift has no brews yet — grace period (consecutive with last logged shift)');
     }
-    
+
     let streak = 0;
     let previousShiftId = null;
-    
+
     for (const shiftId of sortedShiftIds) {
         const brews = groups[shiftId];
         const hasHouse = brews.some(b => b.beanType === 'House');
         const hasDecaf = brews.some(b => b.beanType === 'Decaf');
-        
+
         console.log(`  ${shiftId}: House=${hasHouse}, Decaf=${hasDecaf}`);
-        
+
+        // The current (in-progress) shift gets a grace period — skip over it
+        // if it's incomplete so we don't break the streak prematurely
+        if (shiftId === currentShiftId && (!hasHouse || !hasDecaf)) {
+            console.log(`    ⏳ Current shift incomplete — grace period, skipping`);
+            previousShiftId = shiftId;
+            continue;
+        }
+
         // Check if this shift is complete (both beans logged)
         if (!hasHouse || !hasDecaf) {
             console.log(`    ❌ Incomplete shift - streak ends at ${streak}`);
             break;
         }
-        
+
         // Check if there's a gap between this shift and the previous one
         if (previousShiftId !== null && !isConsecutiveShift(shiftId, previousShiftId)) {
             console.log(`    ❌ Gap detected between ${shiftId} and ${previousShiftId} - streak ends at ${streak}`);
             break;
         }
-        
+
         // This shift is complete and consecutive
         streak++;
         previousShiftId = shiftId;
