@@ -589,7 +589,8 @@ async function checkDuplicateBrew(beanType, shiftId) {
         grindTime: data.grindTime,
         beanType: data.beanType,
         timestamp: timestamp.toISOString(),
-        shift: calculateShift(timestamp)
+        shift: data.shift || calculateShift(timestamp),
+        shiftId: data.shiftId || getShiftIdentifier(timestamp)
     };
 }
 
@@ -648,8 +649,12 @@ function parseSnapshot(querySnapshot) {
             grindTime: data.grindTime,
             beanType: data.beanType,
             timestamp: timestamp.toISOString(),
-            // Always recalculate shift from timestamp (don't trust stored value)
-            shift: calculateShift(timestamp)
+            // Use the shift and shiftId written at brew time (in the café's
+            // local timezone) so viewers in other timezones see the correct
+            // shift.  Fall back to recalculating for legacy documents that
+            // pre-date these fields.
+            shift: data.shift || calculateShift(timestamp),
+            shiftId: data.shiftId || getShiftIdentifier(timestamp)
         });
     });
     return brews;
@@ -722,15 +727,15 @@ function waitForSnapshot() {
  */
 function groupBrewsByShift(brews) {
     const groups = {};
-    
+
     brews.forEach(brew => {
-        const shiftId = getShiftIdentifier(brew.timestamp);
+        const shiftId = brew.shiftId;
         if (!groups[shiftId]) {
             groups[shiftId] = [];
         }
         groups[shiftId].push(brew);
     });
-    
+
     return groups;
 }
 
@@ -852,8 +857,8 @@ function calculateStreak(allBrews) {
  * Check if shift was just completed (both beans now logged)
  */
 function wasShiftJustCompleted(shiftId, newBeanType) {
-    const shiftBrews = allBrewsCache.filter(brew => 
-        getShiftIdentifier(brew.timestamp) === shiftId
+    const shiftBrews = allBrewsCache.filter(brew =>
+        brew.shiftId === shiftId
     );
     
     // Check if OTHER bean type already exists
@@ -1069,7 +1074,7 @@ function updateShiftStatus() {
 
     const shiftBrews = allBrewsCache.filter(brew =>
         brew.location === selectedLocation &&
-        getShiftIdentifier(brew.timestamp) === currentShiftId
+        brew.shiftId === currentShiftId
     );
 
     const hasHouse = shiftBrews.some(b => b.beanType === 'House');
@@ -1282,6 +1287,7 @@ async function handleSubmit(e) {
         grindTime: grind,
         timestamp: Timestamp.fromDate(now),
         shift: calculateShift(now),
+        shiftId: shiftId,
         beanType: selectedBeanType
     };
     
