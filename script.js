@@ -1102,10 +1102,12 @@ function updateLocationTabs() {
         }
     });
     
-    // Scroll active tab into view
+    // Scroll active tab into view within the tab bar only
     const activeTab = document.querySelector('.location-tab.active');
     if (activeTab) {
-        activeTab.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+        const tabBar = activeTab.parentElement;
+        const scrollLeft = activeTab.offsetLeft - (tabBar.clientWidth / 2) + (activeTab.offsetWidth / 2);
+        tabBar.scrollTo({ left: scrollLeft, behavior: 'smooth' });
     }
 
     // Update UI based on view mode

@@ -1016,13 +1016,13 @@ button[type="submit"]:disabled {
         gap: 4px;
         justify-content: stretch;
         scroll-snap-type: x mandatory;
-        scroll-snap-align: center;
     }
-    
+
     .location-tab {
         padding: 0;
         height: var(--mobile-touch-target);
         min-width: 60px;
+        scroll-snap-align: center;
         font-size: 0.75rem;
         font-weight: 700;
         border-radius: var(--radius-sm);
