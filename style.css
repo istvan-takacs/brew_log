@@ -82,6 +82,7 @@ h1 {
 /* Location Tabs */
 .location-tabs {
     display: flex;
+    flex-flow: wrap;
     gap: var(--gap-sm);
     justify-content: center;
     overflow-x: auto;
@@ -92,6 +93,7 @@ h1 {
 
 .location-tabs::-webkit-scrollbar {
     display: none;
+    scrollbar-width: none;
 }
 
 .location-tab {
@@ -493,7 +495,8 @@ tbody .brew-badges .location-badge {
 .brew-details span {
     display: table-cell;
     vertical-align: middle;
-    padding: 0.75rem 1rem; /* Reduced vertical  padding */
+    padding: 0.75rem 1rem;
+    text-align: center;
 }
 
 /* Desktop: Location cell (4th column in global view) */
@@ -516,11 +519,6 @@ tbody .brew-badges .location-badge {
 .brew-time {
     display: table-cell;
     vertical-align: middle;
-    text-align: center;
-}
-
-/* Desktop: Ensure all detail spans are centered */
-.brew-details span {
     text-align: center;
 }
 
@@ -621,6 +619,16 @@ tbody .brew-badges .location-badge {
     color: #9C27B0;
 }
 
+.location-Glasgow {
+    background-color: rgba(0, 150, 136, 0.15);
+    color: #009688;
+}
+
+.location-Dublin {
+    background-color: rgba(121, 85, 72, 0.15);
+    color: #795548;
+}
+
 /* Shift Group Headers */
 .shift-group-header {
     background-color: var(--bg-primary);
@@ -685,11 +693,6 @@ tbody .brew-badges .location-badge {
     opacity: 0.3;
 }
 
-.empty-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.3;
-}
 
 .empty-state .hint {
     font-size: 0.875rem;
@@ -1007,40 +1010,40 @@ button[type="submit"]:disabled {
         box-shadow: 0 -2px 8px var(--shadow);
         padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
         z-index: 100;
-        display: grid;
-        grid-template-columns: repeat(6, 1fr);
+        display:flex;
+        overflow-x: auto;
+        flex-wrap: nowrap;
         gap: 4px;
         justify-content: stretch;
+        scroll-snap-type: x mandatory;
+        scroll-snap-align: center;
     }
     
     .location-tab {
         padding: 0;
         height: var(--mobile-touch-target);
-        min-width: 0;
+        min-width: 60px;
         font-size: 0.75rem;
         font-weight: 700;
         border-radius: var(--radius-sm);
         white-space: normal;
         word-break: break-word;
         display: flex;
+        flex-shrink: 0;
         align-items: center;
         justify-content: center;
         text-align: center;
         letter-spacing: 0;
     }
     
-    /* Show abbreviations on mobile */
+    /* Hide full text, show abbreviation on mobile */
+    .location-tab {
+        font-size: 0;
+    }
+
     .location-tab::before {
         content: attr(data-short);
-    }
-    
-    /* Hide full text on mobile */
-    .location-tab {
-        font-size: 0; /* Hide original text */
-    }
-    
-    .location-tab::before {
-        font-size: 0.75rem; /* Show abbreviation */
+        font-size: 0.75rem;
     }
     
     /* Content Area */
@@ -1249,7 +1252,17 @@ button[type="submit"]:disabled {
         background-color: #BA68C8;
         color: #FFFFFF;
     }
-    
+
+    .location-marker[data-location="Glasgow"] {
+        background-color: #4DB6AC;
+        color: #FFFFFF;
+    }
+
+    .location-marker[data-location="Dublin"] {
+        background-color: #A1887F;
+        color: #FFFFFF;
+    }
+
     /* TIMESTAMP (location-specific cards) - Override desktop */
     tbody tr:not(.has-location) .brew-time {
         flex: 0 0 auto !important;
@@ -1314,11 +1327,6 @@ button[type="submit"]:disabled {
     /* Mobile: Hide desktop location cell */
     .brew-location-desktop {
         display: none !important;
-    }
-    
-    /* Mobile: Override desktop and restore ORIGINAL larger pills */
-    .brew-badges {
-        display: flex !important;
     }
     
     .brew-badges .shift-badge,

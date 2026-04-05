@@ -270,7 +270,6 @@ function setupPullToRefresh() {
     
     document.addEventListener('touchend', async () => {
         if (isPulling && pullDistance > 80) {
-            refreshIndicator.classList.remove('hidden');
             try {
                 subscribeToBrew();
                 showToast('Refreshed! ✅');
@@ -955,7 +954,9 @@ function renderTable(brews) {
                     'Tower': 'LTL',
                     'Bankside': 'LBS',
                     'Victoria': 'LVS',
-                    'Olympia': 'LOL'
+                    'Olympia': 'LOL',
+                    'Glasgow': 'GLA',
+                    'Dublin':'DSP'
                 }[brew.location] || brew.location.substring(0, 3).toUpperCase()
             ) : null;
             
@@ -1101,6 +1102,12 @@ function updateLocationTabs() {
         }
     });
     
+    // Scroll active tab into view
+    const activeTab = document.querySelector('.location-tab.active');
+    if (activeTab) {
+        activeTab.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+    }
+
     // Update UI based on view mode
     if (isGlobalView) {
         logSection.style.display = 'none';
@@ -1214,7 +1221,7 @@ async function handleSubmit(e) {
     // Time validation (depends on bean type)
     if (time < timeConfig.minTime || time > timeConfig.maxTime) {
         submitBtn.disabled = false;
-        const coarseFine = value > config.maxTime ? "coarser" : "finer";
+        const coarseFine = time > timeConfig.maxTime ? "coarser" : "finer";
         btnText.classList.remove('hidden');
         btnSpinner.classList.add('hidden');
         showError(`Time must be between ${timeConfig.minTime}-${timeConfig.maxTime}s for ${selectedBeanType}. Try adjusting the grinder wheel to make it ${coarseFine}.`);
@@ -1376,7 +1383,7 @@ function showToast(message = 'Brew logged! ☕') {
     }, 3000);
 }
 
-// Keyboard shortcut: Press Enter to submit from any input
+// Input event listeners: Enter-to-submit and iOS decimal separator fix
 document.querySelectorAll('input[type="number"], input[type="text"][inputmode="decimal"]').forEach(input => {
     input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
@@ -1384,20 +1391,15 @@ document.querySelectorAll('input[type="number"], input[type="text"][inputmode="d
             form.requestSubmit();
         }
     });
-});
 
-// Fix iOS decimal separator issue (comma vs dot)
-// Some iOS keyboards show comma instead of dot based on locale
-document.querySelectorAll('input[type="number"], input[type="text"][inputmode="decimal"]').forEach(input => {
+    // Fix iOS decimal separator issue (comma vs dot)
     input.addEventListener('input', (e) => {
-        // Replace comma with dot for decimal separator
         const value = e.target.value;
         if (value.includes(',')) {
             e.target.value = value.replace(/,/g, '.');
         }
     });
-    
-    // Also handle paste events
+
     input.addEventListener('paste', (e) => {
         setTimeout(() => {
             const value = e.target.value;
