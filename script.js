@@ -1146,7 +1146,10 @@ function setupLocationTabs() {
             
             // Update tab UI
             updateLocationTabs();
-            
+
+            // Reset scroll position to top
+            window.scrollTo(0, 0);
+
             // Resubscribe with new location
             subscribeToBrew();
         });

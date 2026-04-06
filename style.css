@@ -1050,12 +1050,21 @@ button[type="submit"]:disabled {
     .contents {
         padding: 0 var(--gap-md);
     }
-    
+
     .log {
         position: static;
         margin-bottom: var(--gap-lg);
     }
-    
+
+    .history {
+        padding: var(--gap-md);
+    }
+
+    .log,
+    .history {
+        max-width: calc(100vw - 2 * var(--gap-md));
+    }
+
     /* Show toggle button on mobile */
     .toggle-form-btn {
         display: flex;
@@ -1304,15 +1313,14 @@ button[type="submit"]:disabled {
         text-align: center;
     }
     
-    /* Badges container - shift more to center */
+    /* Badges container */
     .brew-badges {
         display: flex !important;
         gap: var(--gap-sm);
         flex-wrap: wrap;
         justify-content: center;
-        margin-left: 1.5rem;
     }
-    
+
     /* Details container */
     .brew-details {
         display: flex !important;
@@ -1323,20 +1331,37 @@ button[type="submit"]:disabled {
         color: var(--text-secondary);
         white-space: nowrap;
     }
-    
+
     /* Mobile: Hide desktop location cell */
     .brew-location-desktop {
         display: none !important;
     }
-    
+
     .brew-badges .shift-badge,
     .brew-badges .bean-badge,
     .brew-badges .location-badge {
         display: inline-block !important;
-        padding: 0.25rem 0.75rem !important; /* ORIGINAL larger size */
-        font-size: 0.75rem !important; /* ORIGINAL larger text */
-        border-radius: 20px !important; /* ORIGINAL larger radius */
+        padding: 0.25rem 0.75rem !important;
+        font-size: 0.75rem !important;
+        border-radius: 20px !important;
         margin: 0;
+    }
+
+    /* Smaller badges and details in global view (less space with location marker) */
+    .has-location .brew-badges .shift-badge,
+    .has-location .brew-badges .bean-badge,
+    .has-location .brew-badges .location-badge {
+        padding: 0.15rem 0.5rem !important;
+        font-size: 0.65rem !important;
+    }
+
+    .has-location .brew-details {
+        gap: 0.25rem;
+        font-size: 0.75rem;
+    }
+
+    tbody tr.has-location .brew-time {
+        font-size: 1.25rem !important;
     }
     
     /* Empty State */
