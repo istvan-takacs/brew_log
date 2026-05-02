@@ -124,6 +124,27 @@ h1 {
     border-color: var(--accent-primary);
 }
 
+/* Desktop: frosted glass tabs on gradient header */
+@media (min-width: 768px) {
+    .location-tab {
+        background: rgba(255, 255, 255, 0.15);
+        color: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .location-tab:hover {
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .location-tab.active {
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--text-primary);
+        border-color: transparent;
+    }
+}
+
 h2 {
     font-size: 1.25rem;
     font-weight: 500;
